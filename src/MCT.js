@@ -20,101 +20,81 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define([
-    'EventEmitter',
-    'uuid',
-    './BundleRegistry',
-    './installDefaultBundles',
-    './api/api',
-    './api/overlays/OverlayAPI',
-    './selection/Selection',
-    './api/objects/object-utils',
-    './plugins/plugins',
-    './adapter/indicators/legacy-indicators-plugin',
-    './plugins/buildInfo/plugin',
-    './ui/registries/ViewRegistry',
-    './plugins/imagery/plugin',
-    './ui/registries/InspectorViewRegistry',
-    './ui/registries/ToolbarRegistry',
-    './ui/router/ApplicationRouter',
-    './ui/router/Browse',
-    '../platform/framework/src/Main',
-    './ui/layout/Layout.vue',
-    '../platform/core/src/objects/DomainObjectImpl',
-    '../platform/core/src/capabilities/ContextualDomainObject',
-    './ui/preview/plugin',
-    './api/Branding',
-    './plugins/licenses/plugin',
-    './plugins/remove/plugin',
-    'vue'
-], function (
-    EventEmitter,
-    uuid,
-    BundleRegistry,
-    installDefaultBundles,
-    api,
-    OverlayAPI,
-    Selection,
-    objectUtils,
-    plugins,
-    LegacyIndicatorsPlugin,
-    buildInfoPlugin,
-    ViewRegistry,
-    ImageryPlugin,
-    InspectorViewRegistry,
-    ToolbarRegistry,
-    ApplicationRouter,
-    Browse,
-    Main,
-    Layout,
-    DomainObjectImpl,
-    ContextualDomainObject,
-    PreviewPlugin,
-    BrandingAPI,
-    LicensesPlugin,
-    RemoveActionPlugin,
-    Vue
-) {
-    /**
-     * Open MCT is an extensible web application for building mission
-     * control user interfaces. This module is itself an instance of
-     * [MCT]{@link module:openmct.MCT}, which provides an interface for
-     * configuring and executing the application.
-     *
-     * @exports openmct
-     */
+define(
+    [
+      'EventEmitter',
+      'uuid',
+      './BundleRegistry',
+      './installDefaultBundles',
+      './api/api',
+      './api/overlays/OverlayAPI',
+      './selection/Selection',
+      './api/objects/object-utils',
+      './plugins/plugins',
+      './adapter/indicators/legacy-indicators-plugin',
+      './plugins/buildInfo/plugin',
+      './ui/registries/ViewRegistry',
+      './plugins/imagery/plugin',
+      './ui/registries/InspectorViewRegistry',
+      './ui/registries/ToolbarRegistry',
+      './ui/router/ApplicationRouter',
+      './ui/router/Browse',
+      '../platform/framework/src/Main',
+      './ui/layout/Layout.vue',
+      '../platform/core/src/objects/DomainObjectImpl',
+      '../platform/core/src/capabilities/ContextualDomainObject',
+      './ui/preview/plugin',
+      './api/Branding',
+      './plugins/licenses/plugin',
+      './plugins/remove/plugin',
+      'vue'
+    ],
+    function(EventEmitter, uuid, BundleRegistry, installDefaultBundles, api,
+             OverlayAPI, Selection, objectUtils, plugins,
+             LegacyIndicatorsPlugin, buildInfoPlugin, ViewRegistry,
+             ImageryPlugin, InspectorViewRegistry, ToolbarRegistry,
+             ApplicationRouter, Browse, Main, Layout, DomainObjectImpl,
+             ContextualDomainObject, PreviewPlugin, BrandingAPI, LicensesPlugin,
+             RemoveActionPlugin, Vue) {
+      /**
+       * Open MCT is an extensible web application for building mission
+       * control user interfaces. This module is itself an instance of
+       * [MCT]{@link module:openmct.MCT}, which provides an interface for
+       * configuring and executing the application.
+       *
+       * @exports openmct
+       */
 
-    /**
-     * The Open MCT application. This may be configured by installing plugins
-     * or registering extensions before the application is started.
-     * @class MCT
-     * @memberof module:openmct
-     * @augments {EventEmitter}
-     */
-    function MCT() {
+      /**
+       * The Open MCT application. This may be configured by installing plugins
+       * or registering extensions before the application is started.
+       * @class MCT
+       * @memberof module:openmct
+       * @augments {EventEmitter}
+       */
+      function MCT() {
         EventEmitter.call(this);
         /* eslint-disable no-undef */
         this.buildInfo = {
-            version: __OPENMCT_VERSION__,
-            buildDate: __OPENMCT_BUILD_DATE__,
-            revision: __OPENMCT_REVISION__,
-            branch: __OPENMCT_BUILD_BRANCH__
+          version : __OPENMCT_VERSION__,
+          buildDate : __OPENMCT_BUILD_DATE__,
+          revision : __OPENMCT_REVISION__,
+          branch : __OPENMCT_BUILD_BRANCH__
         };
         /* eslint-enable no-undef */
 
-
-        this.legacyBundle = { extensions: {
-            services: [
-                {
-                    key: "openmct",
-                    implementation: function ($injector) {
-                        this.$injector = $injector;
-                        return this;
-                    }.bind(this),
-                    depends: ['$injector']
-                }
-            ]
-        } };
+        this.legacyBundle = {
+          extensions : {
+            services : [ {
+              key : "openmct",
+              implementation : function($injector) {
+                this.$injector = $injector;
+                return this;
+              }.bind(this),
+              depends : [ '$injector' ]
+            } ]
+          }
+        };
 
         /**
          * Tracks current selection state of the application.
@@ -216,8 +196,8 @@ define([
         this.objects = new api.ObjectAPI();
 
         /**
-         * An interface for retrieving and interpreting telemetry data associated
-         * with a domain object.
+         * An interface for retrieving and interpreting telemetry data
+         * associated with a domain object.
          *
          * @type {module:openmct.TelemetryAPI}
          * @memberof module:openmct.MCT#
@@ -226,7 +206,8 @@ define([
         this.telemetry = new api.TelemetryAPI(this);
 
         /**
-         * An interface for creating new indicators and changing them dynamically.
+         * An interface for creating new indicators and changing them
+         * dynamically.
          *
          * @type {module:openmct.IndicatorAPI}
          * @memberof module:openmct.MCT#
@@ -266,125 +247,122 @@ define([
         this.install(this.plugins.WebPage());
         this.install(this.plugins.Condition());
         this.install(this.plugins.ConditionWidget());
-    }
+      }
 
-    MCT.prototype = Object.create(EventEmitter.prototype);
+      MCT.prototype = Object.create(EventEmitter.prototype);
 
-    MCT.prototype.MCT = MCT;
+      MCT.prototype.MCT = MCT;
 
-    MCT.prototype.legacyExtension = function (category, extension) {
+      MCT.prototype.legacyExtension = function(category, extension) {
         this.legacyBundle.extensions[category] =
             this.legacyBundle.extensions[category] || [];
         this.legacyBundle.extensions[category].push(extension);
-    };
+      };
 
-    /**
-     * Return a legacy object, for compatibility purposes only.  This method
-     * will be deprecated and removed in the future.
-     * @private
-     */
-    MCT.prototype.legacyObject = function (domainObject) {
+      /**
+       * Return a legacy object, for compatibility purposes only.  This method
+       * will be deprecated and removed in the future.
+       * @private
+       */
+      MCT.prototype.legacyObject = function(domainObject) {
         let capabilityService = this.$injector.get('capabilityService');
 
         function instantiate(model, keyString) {
-            var capabilities = capabilityService.getCapabilities(model, keyString);
-            model.id = keyString;
-            return new DomainObjectImpl(keyString, model, capabilities);
+          var capabilities =
+              capabilityService.getCapabilities(model, keyString);
+          model.id = keyString;
+          return new DomainObjectImpl(keyString, model, capabilities);
         }
 
         if (Array.isArray(domainObject)) {
-            // an array of domain objects. [object, ...ancestors] representing
-            // a single object with a given chain of ancestors.  We instantiate
-            // as a single contextual domain object.
-            return domainObject
-                .map((o) => {
-                    let keyString = objectUtils.makeKeyString(o.identifier);
-                    let oldModel = objectUtils.toOldFormat(o);
-                    return instantiate(oldModel, keyString);
-                })
-                .reverse()
-                .reduce((parent, child) => {
-                    return new ContextualDomainObject(child, parent);
-                });
+          // an array of domain objects. [object, ...ancestors] representing
+          // a single object with a given chain of ancestors.  We instantiate
+          // as a single contextual domain object.
+          return domainObject
+              .map((o) => {
+                let keyString = objectUtils.makeKeyString(o.identifier);
+                let oldModel = objectUtils.toOldFormat(o);
+                return instantiate(oldModel, keyString);
+              })
+              .reverse()
+              .reduce((parent, child) => {
+                return new ContextualDomainObject(child, parent);
+              });
 
         } else {
-            let keyString = objectUtils.makeKeyString(domainObject.identifier);
-            let oldModel = objectUtils.toOldFormat(domainObject);
-            return instantiate(oldModel, keyString);
+          let keyString = objectUtils.makeKeyString(domainObject.identifier);
+          let oldModel = objectUtils.toOldFormat(domainObject);
+          return instantiate(oldModel, keyString);
         }
-    };
+      };
 
-    /**
-     * Set path to where assets are hosted.  This should be the path to main.js.
-     * @memberof module:openmct.MCT#
-     * @method setAssetPath
-     */
-    MCT.prototype.setAssetPath = function (assetPath) {
-        this._assetPath = assetPath;
-    };
+      /**
+       * Set path to where assets are hosted.  This should be the path to
+       * main.js.
+       * @memberof module:openmct.MCT#
+       * @method setAssetPath
+       */
+      MCT.prototype.setAssetPath = function(
+          assetPath) { this._assetPath = assetPath; };
 
-    /**
-     * Get path to where assets are hosted.
-     * @memberof module:openmct.MCT#
-     * @method getAssetPath
-     */
-    MCT.prototype.getAssetPath = function () {
+      /**
+       * Get path to where assets are hosted.
+       * @memberof module:openmct.MCT#
+       * @method getAssetPath
+       */
+      MCT.prototype.getAssetPath = function() {
         const assetPathLength = this._assetPath && this._assetPath.length;
         if (!assetPathLength) {
-            return '/';
+          return '/';
         }
 
         if (this._assetPath[assetPathLength - 1] !== '/') {
-            return this._assetPath + '/';
+          return this._assetPath + '/';
         }
 
         return this._assetPath;
-    };
+      };
 
-    /**
-     * Start running Open MCT. This should be called only after any plugins
-     * have been installed.
-     * @fires module:openmct.MCT~start
-     * @memberof module:openmct.MCT#
-     * @method start
-     * @param {HTMLElement} [domElement] the DOM element in which to run
-     *        MCT; if undefined, MCT will be run in the body of the document
-     */
-    MCT.prototype.start = function (domElement) {
+      /**
+       * Start running Open MCT. This should be called only after any plugins
+       * have been installed.
+       * @fires module:openmct.MCT~start
+       * @memberof module:openmct.MCT#
+       * @method start
+       * @param {HTMLElement} [domElement] the DOM element in which to run
+       *        MCT; if undefined, MCT will be run in the body of the document
+       */
+      MCT.prototype.start = function(domElement) {
         if (!this.plugins.DisplayLayout._installed) {
-            this.install(this.plugins.DisplayLayout({
-                showAsView: ['summary-widget']
-            }));
+          this.install(
+              this.plugins.DisplayLayout({showAsView : [ 'summary-widget' ]}));
         }
 
         if (!domElement) {
-            domElement = document.body;
+          domElement = document.body;
         }
 
         this.element = domElement;
 
         this.legacyExtension('runs', {
-            depends: ['navigationService'],
-            implementation: function (navigationService) {
-                navigationService
-                    .addListener(this.emit.bind(this, 'navigation'));
-            }.bind(this)
+          depends : [ 'navigationService' ],
+          implementation : function(navigationService) {
+            navigationService.addListener(this.emit.bind(this, 'navigation'));
+          }.bind(this)
         });
 
         // TODO: remove with legacy types.
-        this.types.listKeys().forEach(function (typeKey) {
-            var type = this.types.get(typeKey);
-            var legacyDefinition = type.toLegacyDefinition();
-            legacyDefinition.key = typeKey;
-            this.legacyExtension('types', legacyDefinition);
+        this.types.listKeys().forEach(function(typeKey) {
+          var type = this.types.get(typeKey);
+          var legacyDefinition = type.toLegacyDefinition();
+          legacyDefinition.key = typeKey;
+          this.legacyExtension('types', legacyDefinition);
         }.bind(this));
 
         this.legacyRegistry.register('adapter', this.legacyBundle);
         this.legacyRegistry.enable('adapter');
 
-        this.router.route(/^\/$/, () => {
-            this.router.setPath('/browse/');
-        });
+        this.router.route(/^\/$/, () => { this.router.setPath('/browse/'); });
 
         /**
          * Fired by [MCT]{@link module:openmct.MCT} when the application
@@ -393,43 +371,36 @@ define([
          * @memberof module:openmct.MCT~
          */
         const startPromise = new Main()
-        startPromise.run(this)
-            .then(function (angular) {
-                this.$angular = angular;
-                // OpenMCT Object provider doesn't operate properly unless
-                // something has depended upon objectService.  Cool, right?
-                this.$injector.get('objectService');
+        startPromise.run(this).then(function(angular) {
+          this.$angular = angular;
+          // OpenMCT Object provider doesn't operate properly unless
+          // something has depended upon objectService.  Cool, right?
+          this.$injector.get('objectService');
 
-                var appLayout = new Vue({
-                    components: {
-                        'Layout': Layout.default
-                    },
-                    provide: {
-                        openmct: this
-                    },
-                    template: '<Layout ref="layout"></Layout>'
-                });
-                domElement.appendChild(appLayout.$mount().$el);
+          var appLayout = new Vue({
+            components : {'Layout' : Layout.default},
+            provide : {openmct : this},
+            template : '<Layout ref="layout"></Layout>'
+          });
+          domElement.appendChild(appLayout.$mount().$el);
 
-                this.layout = appLayout.$refs.layout;
-                Browse(this);
-                this.router.start();
-                this.emit('start');
-            }.bind(this));
-    };
+          this.layout = appLayout.$refs.layout;
+          Browse(this);
+          this.router.start();
+          this.emit('start');
+        }.bind(this));
+      };
 
-    /**
-     * Install a plugin in MCT.
-     *
-     * @param {Function} plugin a plugin install function which will be
-     *     invoked with the mct instance.
-     * @memberof module:openmct.MCT#
-     */
-    MCT.prototype.install = function (plugin) {
-        plugin(this);
-    };
+      /**
+       * Install a plugin in MCT.
+       *
+       * @param {Function} plugin a plugin install function which will be
+       *     invoked with the mct instance.
+       * @memberof module:openmct.MCT#
+       */
+      MCT.prototype.install = function(plugin) { plugin(this); };
 
-    MCT.prototype.plugins = plugins;
+      MCT.prototype.plugins = plugins;
 
-    return MCT;
-});
+      return MCT;
+    });

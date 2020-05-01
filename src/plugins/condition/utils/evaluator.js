@@ -19,50 +19,51 @@
  * this source code distribution or the Licensing information page available
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
-import { TRIGGER } from "./constants";
+import {TRIGGER} from "./constants";
 
-export const evaluateResults = (results, trigger) => {
-    if (trigger && trigger === TRIGGER.XOR) {
+export const evaluateResults =
+    (results, trigger) => {
+      if (trigger && trigger === TRIGGER.XOR) {
         return matchExact(results, 1);
-    } else if (trigger && trigger === TRIGGER.NOT) {
+      } else if (trigger && trigger === TRIGGER.NOT) {
         return matchExact(results, 0);
-    } else if (trigger && trigger === TRIGGER.ALL) {
+      } else if (trigger && trigger === TRIGGER.ALL) {
         return matchAll(results);
-    } else {
+      } else {
         return matchAny(results);
+      }
     }
-}
 
 function matchAll(results) {
-    for (const result of results) {
-        if (!result) {
-            return false;
-        }
+  for (const result of results) {
+    if (!result) {
+      return false;
     }
+  }
 
-    return true;
+  return true;
 }
 
 function matchAny(results) {
-    for (const result of results) {
-        if (result) {
-            return true;
-        }
+  for (const result of results) {
+    if (result) {
+      return true;
     }
+  }
 
-    return false;
+  return false;
 }
 
 function matchExact(results, target) {
-    let matches = 0;
-    for (const result of results) {
-        if (result) {
-            matches++;
-        }
-        if (matches > target) {
-            return false;
-        }
+  let matches = 0;
+  for (const result of results) {
+    if (result) {
+      matches++;
     }
+    if (matches > target) {
+      return false;
+    }
+  }
 
-    return matches === target;
+  return matches === target;
 }

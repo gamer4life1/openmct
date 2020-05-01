@@ -22,136 +22,134 @@
 
 /*global self*/
 
-(function () {
+(function() {
 
-    var FIFTEEN_MINUTES = 15 * 60 * 1000;
+var FIFTEEN_MINUTES = 15 * 60 * 1000;
 
-    var handlers = {
-        subscribe: onSubscribe,
-        unsubscribe: onUnsubscribe,
-        request: onRequest
-    };
+var handlers = {
+  subscribe : onSubscribe,
+  unsubscribe : onUnsubscribe,
+  request : onRequest
+};
 
-    var subscriptions = {};
+var subscriptions = {};
 
-    function workSubscriptions(timestamp) {
-        var now = Date.now();
-        var nextWork = Math.min.apply(Math, Object.values(subscriptions).map(function (subscription) {
-            return subscription(now);
-        }));
-        var wait = nextWork - now;
-        if (wait < 0) {
-            wait = 0;
+function workSubscriptions(timestamp) {
+  var now = Date.now();
+  var nextWork = Math.min.apply(
+      Math, Object.values(subscriptions)
+                .map(function(subscription) { return subscription(now); }));
+  var wait = nextWork - now;
+  if (wait < 0) {
+    wait = 0;
+  }
+
+  if (Number.isFinite(wait)) {
+    setTimeout(workSubscriptions, wait);
+  }
+}
+
+function onSubscribe(message) {
+  var data = message.data;
+
+  // Keep
+  var start = Date.now();
+  var step = 1000 / data.dataRateInHz;
+  var nextStep = start - (start % step) + step;
+
+  function work(now) {
+    while (nextStep < now) {
+      self.postMessage({
+        id : message.id,
+        data : {
+          name : data.name,
+          utc : nextStep,
+          yesterday : nextStep - 60 * 60 * 24 * 1000,
+          sin : sin(nextStep, data.period, data.amplitude, data.offset,
+                    data.phase, data.randomness),
+          cos : cos(nextStep, data.period, data.amplitude, data.offset,
+                    data.phase, data.randomness)
         }
-
-        if (Number.isFinite(wait)) {
-            setTimeout(workSubscriptions, wait);
-        }
+      });
+      nextStep += step;
     }
+    return nextStep;
+  }
 
-    function onSubscribe(message) {
-        var data = message.data;
+  subscriptions[message.id] = work;
+  workSubscriptions();
+}
 
-        // Keep
-        var start = Date.now();
-        var step = 1000 / data.dataRateInHz;
-        var nextStep = start - (start % step) + step;
+function onUnsubscribe(message) { delete subscriptions[message.data.id]; }
 
-        function work(now) {
-            while (nextStep < now) {
-                self.postMessage({
-                    id: message.id,
-                    data: {
-                        name: data.name,
-                        utc: nextStep,
-                        yesterday: nextStep - 60*60*24*1000,
-                        sin: sin(nextStep, data.period, data.amplitude, data.offset, data.phase, data.randomness),
-                        cos: cos(nextStep, data.period, data.amplitude, data.offset, data.phase, data.randomness)
-                    }
-                });
-                nextStep += step;
-            }
-            return nextStep;
-        }
+function onRequest(message) {
+  var request = message.data;
+  if (request.end === undefined) {
+    request.end = Date.now();
+  }
+  if (request.start === undefined) {
+    request.start = request.end - FIFTEEN_MINUTES;
+  }
 
-        subscriptions[message.id] = work;
-        workSubscriptions();
+  var now = Date.now();
+  var start = request.start;
+  var end = request.end > now ? now : request.end;
+  var amplitude = request.amplitude;
+  var period = request.period;
+  var offset = request.offset;
+  var dataRateInHz = request.dataRateInHz;
+  var phase = request.phase;
+  var randomness = request.randomness;
+
+  var step = 1000 / dataRateInHz;
+  var nextStep = start - (start % step) + step;
+
+  var data = [];
+
+  for (; nextStep < end && data.length < 5000; nextStep += step) {
+    data.push({
+      name : request.name,
+      utc : nextStep,
+      yesterday : nextStep - 60 * 60 * 24 * 1000,
+      sin : sin(nextStep, period, amplitude, offset, phase, randomness),
+      cos : cos(nextStep, period, amplitude, offset, phase, randomness)
+    });
+  }
+  self.postMessage({id : message.id, data : data});
+}
+
+function cos(timestamp, period, amplitude, offset, phase, randomness) {
+  return amplitude *
+             Math.cos(phase + (timestamp / period / 1000 * Math.PI * 2)) +
+         (amplitude * Math.random() * randomness) + offset;
+}
+
+function sin(timestamp, period, amplitude, offset, phase, randomness) {
+  return amplitude *
+             Math.sin(phase + (timestamp / period / 1000 * Math.PI * 2)) +
+         (amplitude * Math.random() * randomness) + offset;
+}
+
+function sendError(error, message) {
+  self.postMessage({
+    error : error.name + ': ' + error.message,
+    message : message,
+    id : message.id
+  });
+}
+
+self.onmessage = function handleMessage(event) {
+  var message = event.data;
+  var handler = handlers[message.request];
+
+  if (!handler) {
+    sendError(new Error('unknown message type'), message);
+  } else {
+    try {
+      handler(message);
+    } catch (e) {
+      sendError(e, message);
     }
-
-    function onUnsubscribe(message) {
-        delete subscriptions[message.data.id];
-    }
-
-    function onRequest(message) {
-        var request = message.data;
-        if (request.end === undefined) {
-            request.end = Date.now();
-        }
-        if (request.start === undefined) {
-            request.start = request.end - FIFTEEN_MINUTES;
-        }
-
-        var now = Date.now();
-        var start = request.start;
-        var end = request.end > now ? now : request.end;
-        var amplitude = request.amplitude;
-        var period = request.period;
-        var offset = request.offset;
-        var dataRateInHz = request.dataRateInHz;
-        var phase = request.phase;
-        var randomness = request.randomness;
-
-        var step = 1000 / dataRateInHz;
-        var nextStep = start - (start % step) + step;
-
-        var data = [];
-
-        for (; nextStep < end && data.length < 5000; nextStep += step) {
-            data.push({
-                name: request.name,
-                utc: nextStep,
-                yesterday: nextStep - 60*60*24*1000,
-                sin: sin(nextStep, period, amplitude, offset, phase, randomness),
-                cos: cos(nextStep, period, amplitude, offset, phase, randomness)
-            });
-        }
-        self.postMessage({
-            id: message.id,
-            data: data
-        });
-    }
-
-    function cos(timestamp, period, amplitude, offset, phase, randomness) {
-        return amplitude *
-            Math.cos(phase + (timestamp / period / 1000 * Math.PI * 2)) + (amplitude * Math.random() * randomness) + offset;
-    }
-
-    function sin(timestamp, period, amplitude, offset, phase, randomness) {
-        return amplitude *
-            Math.sin(phase + (timestamp / period / 1000 * Math.PI * 2)) + (amplitude * Math.random() * randomness) + offset;
-    }
-
-    function sendError(error, message) {
-        self.postMessage({
-            error: error.name + ': ' + error.message,
-            message: message,
-            id: message.id
-        });
-    }
-
-    self.onmessage = function handleMessage(event) {
-        var message = event.data;
-        var handler = handlers[message.request];
-
-        if (!handler) {
-            sendError(new Error('unknown message type'), message);
-        } else {
-            try {
-                handler(message);
-            } catch (e) {
-                sendError(e, message);
-            }
-        }
-    };
-
+  }
+};
 }());

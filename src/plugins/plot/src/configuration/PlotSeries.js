@@ -21,293 +21,271 @@
  *****************************************************************************/
 /*global define*/
 
-define([
-    'lodash',
-    '../configuration/Model',
-    '../lib/extend',
-    'EventEmitter'
-], function (
-    _,
-    Model,
-    extend,
-    EventEmitter
-) {
+define(
+    [ 'lodash', '../configuration/Model', '../lib/extend', 'EventEmitter' ],
+    function(_, Model, extend, EventEmitter) {
+      /**
+       * Plot series handle interpreting telemetry metadata for a single
+       * telemetry object, querying for that data, and formatting it for display
+       * purposes.
+       *
+       * Plot series emit both collection events and model events:
+       * `change` when any property changes
+       * `change:<prop_name>` when a specific property changes.
+       * `destroy`: when series is destroyed
+       * `add`: whenever a data point is added to a series
+       * `remove`: whenever a data point is removed from a series.
+       * `reset`: whenever the collection is emptied.
+       *
+       * Plot series have the following Model properties:
+       *
+       * `name`: name of series.
+       * `identifier`: the Open MCT identifier for the telemetry source for this
+       *               series.
+       * `xKey`: the telemetry value key for x values fetched from this series.
+       * `yKey`: the telemetry value key for y values fetched from this series.
+       * `interpolate`: interpolate method, either `undefined` (no
+       * interpolation), `linear` (points are connected via straight lines), or
+       *                `stepAfter` (points are connected by steps).
+       * `markers`: boolean, whether or not this series should render with
+       * markers. `markerSize`: number, size in pixels of markers for this
+       * series. `alarmMarkers`: whether or not to display alarm markers for
+       * this series. `stats`: An object that tracks the min and max y values
+       * observed in this series.  This property is checked and updated whenever
+       * data is added.
+       *
+       * Plot series have the following instance properties:
+       *
+       * `metadata`: the Open MCT Telemetry Metadata Manager for the associated
+       *             telemetry point.
+       * `formats`: the Open MCT format map for this telemetry point.
+       */
+      var PlotSeries = Model.extend({
+        constructor : function(options) {
+          this.metadata =
+              options.openmct.telemetry.getMetadata(options.domainObject);
+          this.formats = options.openmct.telemetry.getFormatMap(this.metadata);
 
-    /**
-     * Plot series handle interpreting telemetry metadata for a single telemetry
-     * object, querying for that data, and formatting it for display purposes.
-     *
-     * Plot series emit both collection events and model events:
-     * `change` when any property changes
-     * `change:<prop_name>` when a specific property changes.
-     * `destroy`: when series is destroyed
-     * `add`: whenever a data point is added to a series
-     * `remove`: whenever a data point is removed from a series.
-     * `reset`: whenever the collection is emptied.
-     *
-     * Plot series have the following Model properties:
-     *
-     * `name`: name of series.
-     * `identifier`: the Open MCT identifier for the telemetry source for this
-     *               series.
-     * `xKey`: the telemetry value key for x values fetched from this series.
-     * `yKey`: the telemetry value key for y values fetched from this series.
-     * `interpolate`: interpolate method, either `undefined` (no interpolation),
-     *                `linear` (points are connected via straight lines), or
-     *                `stepAfter` (points are connected by steps).
-     * `markers`: boolean, whether or not this series should render with markers.
-     * `markerSize`: number, size in pixels of markers for this series.
-     * `alarmMarkers`: whether or not to display alarm markers for this series.
-     * `stats`: An object that tracks the min and max y values observed in this
-     *          series.  This property is checked and updated whenever data is
-     *          added.
-     *
-     * Plot series have the following instance properties:
-     *
-     * `metadata`: the Open MCT Telemetry Metadata Manager for the associated
-     *             telemetry point.
-     * `formats`: the Open MCT format map for this telemetry point.
-     */
-    var PlotSeries = Model.extend({
-        constructor: function (options) {
-            this.metadata = options
-                .openmct
-                .telemetry
-                .getMetadata(options.domainObject);
-            this.formats = options
-                .openmct
-                .telemetry
-                .getFormatMap(this.metadata);
+          this.data = [];
 
-            this.data = [];
+          this.listenTo(this, 'change:xKey', this.onXKeyChange, this);
+          this.listenTo(this, 'change:yKey', this.onYKeyChange, this);
+          this.persistedConfig = options.persistedConfig;
+          this.filters = options.filters;
 
-            this.listenTo(this, 'change:xKey', this.onXKeyChange, this);
-            this.listenTo(this, 'change:yKey', this.onYKeyChange, this);
-            this.persistedConfig = options.persistedConfig;
-            this.filters = options.filters;
-
-            Model.apply(this, arguments);
-            this.onXKeyChange(this.get('xKey'));
-            this.onYKeyChange(this.get('yKey'));
+          Model.apply(this, arguments);
+          this.onXKeyChange(this.get('xKey'));
+          this.onYKeyChange(this.get('yKey'));
         },
 
         /**
          * Set defaults for telemetry series.
          */
-        defaults: function (options) {
-            var range = this.metadata.valuesForHints(['range'])[0];
-            return {
-                name: options.domainObject.name,
-                xKey: options.collection.plot.xAxis.get('key'),
-                yKey: range.key,
-                markers: true,
-                markerSize: 2.0,
-                alarmMarkers: true
-            };
+        defaults : function(options) {
+          var range = this.metadata.valuesForHints([ 'range' ])[0];
+          return {
+            name : options.domainObject.name,
+            xKey : options.collection.plot.xAxis.get('key'),
+            yKey : range.key,
+            markers : true,
+            markerSize : 2.0,
+            alarmMarkers : true
+          };
         },
 
         /**
          * Remove real-time subscription when destroyed.
          */
-        onDestroy: function (model) {
-            if (this.unsubscribe) {
-                this.unsubscribe();
-            }
+        onDestroy : function(model) {
+          if (this.unsubscribe) {
+            this.unsubscribe();
+          }
         },
 
-        initialize: function (options) {
-            this.openmct = options.openmct;
-            this.domainObject = options.domainObject;
-            this.keyString = this.openmct.objects.makeKeyString(this.domainObject.identifier);
-            this.limitEvaluator = this.openmct.telemetry.limitEvaluator(options.domainObject);
-            this.on('destroy', this.onDestroy, this);
+        initialize : function(options) {
+          this.openmct = options.openmct;
+          this.domainObject = options.domainObject;
+          this.keyString =
+              this.openmct.objects.makeKeyString(this.domainObject.identifier);
+          this.limitEvaluator =
+              this.openmct.telemetry.limitEvaluator(options.domainObject);
+          this.on('destroy', this.onDestroy, this);
         },
 
-        locateOldObject: function (oldStyleParent) {
-            return oldStyleParent.useCapability('composition')
-                .then(function (children) {
-                    this.oldObject = children
-                        .filter(function (child) {
-                            return child.getId() === this.keyString;
-                        }, this)[0];
-                }.bind(this));
+        locateOldObject : function(oldStyleParent) {
+          return oldStyleParent.useCapability('composition')
+              .then(function(children) {
+                this.oldObject = children.filter(function(child) {
+                  return child.getId() === this.keyString;
+                }, this)[0];
+              }.bind(this));
         },
         /**
          * Fetch historical data and establish a realtime subscription.  Returns
-         * a promise that is resolved when all connections have been successfully
-         * established.
+         * a promise that is resolved when all connections have been
+         * successfully established.
          *
          * @returns {Promise}
          */
-        fetch: function (options) {
-            let strategy;
+        fetch : function(options) {
+          let strategy;
 
-            if (this.model.interpolate !== 'none') {
-                strategy = 'minmax';
-            }
+          if (this.model.interpolate !== 'none') {
+            strategy = 'minmax';
+          }
 
-            options = _.extend({}, { size: 1000, strategy, filters: this.filters }, options || {});
+          options =
+              _.extend({}, {size : 1000, strategy, filters : this.filters},
+                       options || {});
 
-            if (!this.unsubscribe) {
-                this.unsubscribe = this.openmct
-                    .telemetry
-                    .subscribe(
-                        this.domainObject,
-                        this.add.bind(this),
-                        {
-                            filters: this.filters
-                        }
-                    );
-            }
+          if (!this.unsubscribe) {
+            this.unsubscribe = this.openmct.telemetry.subscribe(
+                this.domainObject, this.add.bind(this),
+                {filters : this.filters});
+          }
 
-            return this.openmct
-                .telemetry
-                .request(this.domainObject, options)
-                .then(function (points) {
-                    var newPoints = _(this.data)
+          return this.openmct.telemetry.request(this.domainObject, options)
+              .then(function(points) {
+                var newPoints =
+                    _(this.data)
                         .concat(points)
                         .sortBy(this.getXVal)
-                        .uniq(true, point => [this.getXVal(point), this.getYVal(point)].join())
+                        .uniq(
+                            true,
+                            point => [this.getXVal(point), this.getYVal(point)]
+                                         .join())
                         .value();
-                    this.reset(newPoints);
-                }.bind(this));
+                this.reset(newPoints);
+              }.bind(this));
         },
         /**
          * Update x formatter on x change.
          */
-        onXKeyChange: function (xKey) {
-            var format = this.formats[xKey];
-            this.getXVal = format.parse.bind(format);
+        onXKeyChange : function(xKey) {
+          var format = this.formats[xKey];
+          this.getXVal = format.parse.bind(format);
         },
         /**
          * Update y formatter on change, default to stepAfter interpolation if
          * y range is an enumeration.
          */
-        onYKeyChange: function (newKey, oldKey) {
-            if (newKey === oldKey) {
-                return;
+        onYKeyChange : function(newKey, oldKey) {
+          if (newKey === oldKey) {
+            return;
+          }
+          var valueMetadata = this.metadata.value(newKey);
+          if (!this.persistedConfig || !this.persistedConfig.interpolate) {
+            if (valueMetadata.format === 'enum') {
+              this.set('interpolate', 'stepAfter');
+            } else {
+              this.set('interpolate', 'linear');
             }
-            var valueMetadata = this.metadata.value(newKey);
-            if (!this.persistedConfig || !this.persistedConfig.interpolate) {
-                if (valueMetadata.format === 'enum') {
-                    this.set('interpolate', 'stepAfter');
-                } else {
-                    this.set('interpolate', 'linear');
-                }
-            }
-            this.evaluate = function (datum) {
-                return this.limitEvaluator.evaluate(datum, valueMetadata);
-            }.bind(this);
-            var format = this.formats[newKey];
-            this.getYVal = format.parse.bind(format);
+          }
+          this.evaluate = function(datum) {
+            return this.limitEvaluator.evaluate(datum, valueMetadata);
+          }.bind(this);
+          var format = this.formats[newKey];
+          this.getYVal = format.parse.bind(format);
         },
 
-        formatX: function (point) {
-            return this.formats[this.get('xKey')].format(point);
-        },
+        formatX : function(
+            point) { return this.formats[this.get('xKey')].format(point); },
 
-        formatY: function (point) {
-            return this.formats[this.get('yKey')].format(point);
-        },
+        formatY : function(
+            point) { return this.formats[this.get('yKey')].format(point); },
 
         /**
          * Clear stats and recalculate from existing data.
          */
-        resetStats: function () {
-            this.unset('stats');
-            this.data.forEach(this.updateStats, this);
+        resetStats : function() {
+          this.unset('stats');
+          this.data.forEach(this.updateStats, this);
         },
 
         /**
          * Reset plot series.  If new data is provided, will add that
          * data to series after reset.
          */
-        reset: function (newData) {
-            this.data = [];
-            this.resetStats();
-            this.emit('reset');
-            if (newData) {
-                newData.forEach(function (point) {
-                    this.add(point, true);
-                }, this);
-            }
+        reset : function(newData) {
+          this.data = [];
+          this.resetStats();
+          this.emit('reset');
+          if (newData) {
+            newData.forEach(function(point) { this.add(point, true); }, this);
+          }
         },
         /**
          * Return the point closest to a given x value.
          */
-        nearestPoint: function (xValue) {
-            var insertIndex = this.sortedIndex(xValue),
-                lowPoint = this.data[insertIndex - 1],
-                highPoint = this.data[insertIndex],
-                indexVal = this.getXVal(xValue),
-                lowDistance = lowPoint ?
-                    indexVal - this.getXVal(lowPoint) :
-                    Number.POSITIVE_INFINITY,
-                highDistance = highPoint ?
-                    this.getXVal(highPoint) - indexVal :
-                    Number.POSITIVE_INFINITY,
-                nearestPoint = highDistance < lowDistance ? highPoint : lowPoint;
+        nearestPoint : function(xValue) {
+          var insertIndex = this.sortedIndex(xValue),
+              lowPoint = this.data[insertIndex - 1],
+              highPoint = this.data[insertIndex],
+              indexVal = this.getXVal(xValue),
+              lowDistance = lowPoint ? indexVal - this.getXVal(lowPoint)
+                                     : Number.POSITIVE_INFINITY,
+              highDistance = highPoint ? this.getXVal(highPoint) - indexVal
+                                       : Number.POSITIVE_INFINITY,
+              nearestPoint = highDistance < lowDistance ? highPoint : lowPoint;
 
-            return nearestPoint;
+          return nearestPoint;
         },
         /**
-         * Override this to implement plot series loading functionality.  Must return
-         * a promise that is resolved when loading is completed.
+         * Override this to implement plot series loading functionality.  Must
+         * return a promise that is resolved when loading is completed.
          *
          * @private
          * @returns {Promise}
          */
-        load: function (options) {
-            return this.fetch(options)
-                .then(function (res) {
-                    this.emit('load');
-                    return res;
-                }.bind(this));
+        load : function(options) {
+          return this.fetch(options).then(function(res) {
+            this.emit('load');
+            return res;
+          }.bind(this));
         },
 
         /**
          * Find the insert index for a given point to maintain sort order.
          * @private
          */
-        sortedIndex: function (point) {
-            return _.sortedIndex(this.data, point, this.getXVal);
-        },
+        sortedIndex : function(
+            point) { return _.sortedIndex(this.data, point, this.getXVal); },
         /**
          * Update min/max stats for the series.
          * @private
          */
-        updateStats: function (point) {
-            var value = this.getYVal(point);
-            var stats = this.get('stats');
-            var changed = false;
-            if (!stats) {
-                stats = {
-                    minValue: value,
-                    minPoint: point,
-                    maxValue: value,
-                    maxPoint: point
-                };
-                changed = true;
-            } else {
-                if (stats.maxValue < value) {
-                    stats.maxValue = value;
-                    stats.maxPoint = point;
-                    changed = true;
-                }
-                if (stats.minValue > value) {
-                    stats.minValue = value;
-                    stats.minPoint = point;
-                    changed = true;
-                }
+        updateStats : function(point) {
+          var value = this.getYVal(point);
+          var stats = this.get('stats');
+          var changed = false;
+          if (!stats) {
+            stats = {
+              minValue : value,
+              minPoint : point,
+              maxValue : value,
+              maxPoint : point
+            };
+            changed = true;
+          } else {
+            if (stats.maxValue < value) {
+              stats.maxValue = value;
+              stats.maxPoint = point;
+              changed = true;
             }
-            if (changed) {
-                this.set('stats', {
-                    minValue: stats.minValue,
-                    minPoint: stats.minPoint,
-                    maxValue: stats.maxValue,
-                    maxPoint: stats.maxPoint
-                });
+            if (stats.minValue > value) {
+              stats.minValue = value;
+              stats.minPoint = point;
+              changed = true;
             }
+          }
+          if (changed) {
+            this.set('stats', {
+              minValue : stats.minValue,
+              minPoint : stats.minPoint,
+              maxValue : stats.maxValue,
+              maxPoint : stats.maxPoint
+            });
+          }
         },
         /**
          * Add a point to the data array while maintaining the sort order of
@@ -321,30 +299,31 @@ define([
          * @param {Boolean} [appendOnly] default false, if true will append
          *                  a point to the end without dupe checking.
          */
-        add: function (point, appendOnly) {
-            var insertIndex = this.data.length;
-            if (!appendOnly) {
-                insertIndex = this.sortedIndex(point);
-                if (this.getXVal(this.data[insertIndex]) === this.getXVal(point)) {
-                    return;
-                }
-                if (this.getXVal(this.data[insertIndex - 1]) === this.getXVal(point)) {
-                    return;
-                }
+        add : function(point, appendOnly) {
+          var insertIndex = this.data.length;
+          if (!appendOnly) {
+            insertIndex = this.sortedIndex(point);
+            if (this.getXVal(this.data[insertIndex]) === this.getXVal(point)) {
+              return;
             }
-            this.updateStats(point);
-            point.mctLimitState = this.evaluate(point);
-            this.data.splice(insertIndex, 0, point);
-            this.emit('add', point, insertIndex, this);
+            if (this.getXVal(this.data[insertIndex - 1]) ===
+                this.getXVal(point)) {
+              return;
+            }
+          }
+          this.updateStats(point);
+          point.mctLimitState = this.evaluate(point);
+          this.data.splice(insertIndex, 0, point);
+          this.emit('add', point, insertIndex, this);
         },
         /**
          * Remove a point from the data array and notify listeners.
          * @private
          */
-        remove: function (point) {
-            var index = this.data.indexOf(point);
-            this.data.splice(index, 1);
-            this.emit('remove', point, index, this);
+        remove : function(point) {
+          var index = this.data.indexOf(point);
+          this.data.splice(index, 1);
+          this.emit('remove', point, index, this);
         },
         /**
          * Purges records outside a given x range.  Changes removal method based
@@ -356,43 +335,43 @@ define([
          * @param {number} range.min minimum x value to keep
          * @param {number} range.max maximum x value to keep.
          */
-        purgeRecordsOutsideRange: function (range) {
-            var startIndex = this.sortedIndex(range.min);
-            var endIndex = this.sortedIndex(range.max) + 1;
-            var pointsToRemove = startIndex + (this.data.length - endIndex + 1);
-            if (pointsToRemove > 0) {
-                if (pointsToRemove < 1000) {
-                    this.data.slice(0, startIndex).forEach(this.remove, this);
-                    this.data.slice(endIndex, this.data.length).forEach(this.remove, this);
-                    this.resetStats();
-                } else {
-                    var newData = this.data.slice(startIndex, endIndex);
-                    this.reset(newData);
-                }
+        purgeRecordsOutsideRange : function(range) {
+          var startIndex = this.sortedIndex(range.min);
+          var endIndex = this.sortedIndex(range.max) + 1;
+          var pointsToRemove = startIndex + (this.data.length - endIndex + 1);
+          if (pointsToRemove > 0) {
+            if (pointsToRemove < 1000) {
+              this.data.slice(0, startIndex).forEach(this.remove, this);
+              this.data.slice(endIndex, this.data.length)
+                  .forEach(this.remove, this);
+              this.resetStats();
+            } else {
+              var newData = this.data.slice(startIndex, endIndex);
+              this.reset(newData);
             }
-
+          }
         },
         /**
-         * Updates filters, clears the plot series, unsubscribes and resubscribes
+         * Updates filters, clears the plot series, unsubscribes and
+         * resubscribes
          * @public
          */
-        updateFiltersAndRefresh: function (updatedFilters) {
-            let deepCopiedFilters = JSON.parse(JSON.stringify(updatedFilters));
+        updateFiltersAndRefresh : function(updatedFilters) {
+          let deepCopiedFilters = JSON.parse(JSON.stringify(updatedFilters));
 
-            if (this.filters && !_.isEqual(this.filters, deepCopiedFilters)) {
-                this.filters = deepCopiedFilters;
-                this.reset();
-                if (this.unsubscribe) {
-                    this.unsubscribe();
-                    delete this.unsubscribe;
-                }
-                this.fetch();
-            } else {
-                this.filters = deepCopiedFilters;
+          if (this.filters && !_.isEqual(this.filters, deepCopiedFilters)) {
+            this.filters = deepCopiedFilters;
+            this.reset();
+            if (this.unsubscribe) {
+              this.unsubscribe();
+              delete this.unsubscribe;
             }
+            this.fetch();
+          } else {
+            this.filters = deepCopiedFilters;
+          }
         }
+      });
+
+      return PlotSeries;
     });
-
-    return PlotSeries;
-
-});

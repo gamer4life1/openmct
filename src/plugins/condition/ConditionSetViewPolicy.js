@@ -20,14 +20,14 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-function ConditionSetViewPolicy() {
-}
+function ConditionSetViewPolicy() {}
 
-ConditionSetViewPolicy.prototype.allow = function (view, domainObject) {
-    if (domainObject.getModel().type === 'conditionSet') {
-        return view.key === 'conditionSet.view';
-    }
-    return true;
+ConditionSetViewPolicy.prototype.allow =
+    function(view, domainObject) {
+  if (domainObject.getModel().type === 'conditionSet') {
+    return view.key === 'conditionSet.view';
+  }
+  return true;
 }
 
 export default ConditionSetViewPolicy;

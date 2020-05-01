@@ -23,151 +23,143 @@
 /**
  * Module defining ExportImageService. Created by hudsonfoo on 09/02/16
  */
-define(
-    [
-        "html2canvas",
-        "saveAs"
-    ],
-    function (
-        html2canvas,
-        { saveAs }
-    ) {
+define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
+  /**
+   * The export image service will export any HTML node to
+   * JPG, or PNG.
+   * @param {object} dialogService
+   * @constructor
+   */
+  function ExportImageService(dialogService) {
+    this.dialogService = dialogService;
+    this.exportCount = 0;
+  }
 
-        /**
-         * The export image service will export any HTML node to
-         * JPG, or PNG.
-         * @param {object} dialogService
-         * @constructor
-         */
-        function ExportImageService(dialogService) {
-            this.dialogService = dialogService;
-            this.exportCount = 0;
-        }
+  /**
+   * Converts an HTML element into a PNG or JPG Blob.
+   * @private
+   * @param {node} element that will be converted to an image
+   * @param {string} type of image to convert the element to.
+   * @returns {promise}
+   */
+  ExportImageService.prototype.renderElement = function(element, imageType,
+                                                        className) {
+    var dialogService = this.dialogService,
+        dialog = dialogService.showBlockingMessage({
+          title : "Capturing...",
+          hint : "Capturing an image",
+          unknownProgress : true,
+          severity : "info",
+          delay : true
+        });
 
-        /**
-         * Converts an HTML element into a PNG or JPG Blob.
-         * @private
-         * @param {node} element that will be converted to an image
-         * @param {string} type of image to convert the element to.
-         * @returns {promise}
-         */
-        ExportImageService.prototype.renderElement = function (element, imageType, className) {
-
-            var dialogService = this.dialogService,
-                dialog = dialogService.showBlockingMessage({
-                    title: "Capturing...",
-                    hint: "Capturing an image",
-                    unknownProgress: true,
-                    severity: "info",
-                    delay: true
-                });
-
-            var mimeType = "image/png";
-            if (imageType === "jpg") {
-                mimeType = "image/jpeg";
-            }
-
-            if (className) {
-                var exportId = 'export-element-' + this.exportCount;
-                this.exportCount++;
-                var oldId = element.id;
-                element.id = exportId;
-            }
-
-            return html2canvas(element, {
-                onclone: function (document) {
-                    if (className) {
-                        var clonedElement = document.getElementById(exportId);
-                        clonedElement.classList.add(className);
-                    }
-                    element.id = oldId;
-                },
-                removeContainer: true // Set to false to debug what html2canvas renders
-            }).then(function (canvas) {
-                dialog.dismiss();
-                return new Promise(function (resolve, reject) {
-                    return canvas.toBlob(resolve, mimeType);
-                });
-            }, function (error) {
-                console.log('error capturing image', error);
-                dialog.dismiss();
-                var errorDialog = dialogService.showBlockingMessage({
-                    title: "Error capturing image",
-                    severity: "error",
-                    hint: "Image was not captured successfully!",
-                    options: [{
-                        label: "OK",
-                        callback: function () {
-                            errorDialog.dismiss();
-                        }
-                    }]
-                });
-            });
-        };
-
-        /**
-         * Takes a screenshot of a DOM node and exports to JPG.
-         * @param {node} element to be exported
-         * @param {string} filename the exported image
-         * @param {string} className to be added to element before capturing (optional)
-         * @returns {promise}
-         */
-        ExportImageService.prototype.exportJPG = function (element, filename, className) {
-            return this.renderElement(element, "jpg", className).then(function (img) {
-                saveAs(img, filename);
-            });
-        };
-
-        /**
-         * Takes a screenshot of a DOM node and exports to PNG.
-         * @param {node} element to be exported
-         * @param {string} filename the exported image
-         * @param {string} className to be added to element before capturing (optional)
-         * @returns {promise}
-         */
-        ExportImageService.prototype.exportPNG = function (element, filename, className) {
-            return this.renderElement(element, "png", className).then(function (img) {
-                saveAs(img, filename);
-            });
-        };
-
-        /**
-         * Takes a screenshot of a DOM node in PNG format.
-         * @param {node} element to be exported
-         * @param {string} filename the exported image
-         * @returns {promise}
-         */
-
-        ExportImageService.prototype.exportPNGtoSRC = function (element, className) {
-            return this.renderElement(element, "png", className);
-        };
-
-        /**
-         * canvas.toBlob() not supported in IE < 10, Opera, and Safari. This polyfill
-         * implements the method in browsers that would not otherwise support it.
-         * https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
-         */
-        function polyfillToBlob() {
-            if (!HTMLCanvasElement.prototype.toBlob) {
-                Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
-                    value: function (callback, mimeType, quality) {
-
-                        var binStr = atob(this.toDataURL(mimeType, quality).split(',')[1]),
-                            len = binStr.length,
-                            arr = new Uint8Array(len);
-
-                        for (var i = 0; i < len; i++) {
-                            arr[i] = binStr.charCodeAt(i);
-                        }
-
-                        callback(new Blob([arr], {type: mimeType || "image/png"}));
-                    }
-                });
-            }
-        }
-
-        polyfillToBlob();
-
-        return ExportImageService;
+    var mimeType = "image/png";
+    if (imageType === "jpg") {
+      mimeType = "image/jpeg";
     }
-);
+
+    if (className) {
+      var exportId = 'export-element-' + this.exportCount;
+      this.exportCount++;
+      var oldId = element.id;
+      element.id = exportId;
+    }
+
+    return html2canvas(element, {
+             onclone : function(document) {
+               if (className) {
+                 var clonedElement = document.getElementById(exportId);
+                 clonedElement.classList.add(className);
+               }
+               element.id = oldId;
+             },
+             removeContainer :
+                 true // Set to false to debug what html2canvas renders
+           })
+        .then(
+            function(canvas) {
+              dialog.dismiss();
+              return new Promise(function(
+                  resolve,
+                  reject) { return canvas.toBlob(resolve, mimeType); });
+            },
+            function(error) {
+              console.log('error capturing image', error);
+              dialog.dismiss();
+              var errorDialog = dialogService.showBlockingMessage({
+                title : "Error capturing image",
+                severity : "error",
+                hint : "Image was not captured successfully!",
+                options : [ {
+                  label : "OK",
+                  callback : function() { errorDialog.dismiss(); }
+                } ]
+              });
+            });
+  };
+
+  /**
+   * Takes a screenshot of a DOM node and exports to JPG.
+   * @param {node} element to be exported
+   * @param {string} filename the exported image
+   * @param {string} className to be added to element before capturing
+   *     (optional)
+   * @returns {promise}
+   */
+  ExportImageService.prototype.exportJPG = function(element, filename,
+                                                    className) {
+    return this.renderElement(element, "jpg", className)
+        .then(function(img) { saveAs(img, filename); });
+  };
+
+  /**
+   * Takes a screenshot of a DOM node and exports to PNG.
+   * @param {node} element to be exported
+   * @param {string} filename the exported image
+   * @param {string} className to be added to element before capturing
+   *     (optional)
+   * @returns {promise}
+   */
+  ExportImageService.prototype.exportPNG = function(element, filename,
+                                                    className) {
+    return this.renderElement(element, "png", className)
+        .then(function(img) { saveAs(img, filename); });
+  };
+
+  /**
+   * Takes a screenshot of a DOM node in PNG format.
+   * @param {node} element to be exported
+   * @param {string} filename the exported image
+   * @returns {promise}
+   */
+
+  ExportImageService.prototype.exportPNGtoSRC = function(
+      element,
+      className) { return this.renderElement(element, "png", className); };
+
+  /**
+   * canvas.toBlob() not supported in IE < 10, Opera, and Safari. This polyfill
+   * implements the method in browsers that would not otherwise support it.
+   * https://developer.mozilla.org/en-US/docs/Web/API/HTMLCanvasElement/toBlob
+   */
+  function polyfillToBlob() {
+    if (!HTMLCanvasElement.prototype.toBlob) {
+      Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
+        value : function(callback, mimeType, quality) {
+          var binStr = atob(this.toDataURL(mimeType, quality).split(',')[1]),
+              len = binStr.length, arr = new Uint8Array(len);
+
+          for (var i = 0; i < len; i++) {
+            arr[i] = binStr.charCodeAt(i);
+          }
+
+          callback(new Blob([ arr ], {type : mimeType || "image/png"}));
+        }
+      });
+    }
+  }
+
+  polyfillToBlob();
+
+  return ExportImageService;
+});

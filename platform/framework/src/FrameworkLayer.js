@@ -22,75 +22,44 @@
 
 /*global window*/
 
-define([
-    './Constants',
-    './FrameworkInitializer',
-    './LogLevel',
-    './load/BundleLoader',
-    './resolve/ImplementationLoader',
-    './resolve/ExtensionResolver',
-    './resolve/BundleResolver',
-    './register/CustomRegistrars',
-    './register/ExtensionRegistrar',
-    './register/ExtensionSorter',
-    './bootstrap/ApplicationBootstrapper'
-], function (
-    Constants,
-    FrameworkInitializer,
-    LogLevel,
-    BundleLoader,
-    ImplementationLoader,
-    ExtensionResolver,
-    BundleResolver,
-    CustomRegistrars,
-    ExtensionRegistrar,
-    ExtensionSorter,
-    ApplicationBootstrapper
-) {
-
-    function FrameworkLayer($http, $log) {
+define(
+    [
+      './Constants', './FrameworkInitializer', './LogLevel',
+      './load/BundleLoader', './resolve/ImplementationLoader',
+      './resolve/ExtensionResolver', './resolve/BundleResolver',
+      './register/CustomRegistrars', './register/ExtensionRegistrar',
+      './register/ExtensionSorter', './bootstrap/ApplicationBootstrapper'
+    ],
+    function(Constants, FrameworkInitializer, LogLevel, BundleLoader,
+             ImplementationLoader, ExtensionResolver, BundleResolver,
+             CustomRegistrars, ExtensionRegistrar, ExtensionSorter,
+             ApplicationBootstrapper) {
+      function FrameworkLayer($http, $log) {
         this.$http = $http;
         this.$log = $log;
-    }
+      }
 
-    FrameworkLayer.prototype.initializeApplication = function (
-        angular,
-        openmct,
-        logLevel
-    ) {
-        var $http = this.$http,
-            $log = this.$log,
-            app = angular.module(Constants.MODULE_NAME, ["ngRoute"]),
+      FrameworkLayer.prototype.initializeApplication = function(
+          angular, openmct, logLevel) {
+        var $http = this.$http, $log = this.$log,
+            app = angular.module(Constants.MODULE_NAME, [ "ngRoute" ]),
             loader = new BundleLoader($http, $log, openmct.legacyRegistry),
             resolver = new BundleResolver(
-                new ExtensionResolver(
-                    new ImplementationLoader({}),
-                    $log
-                ),
-                $log
-            ),
-            registrar = new ExtensionRegistrar(
-                app,
-                new CustomRegistrars(app, $log),
-                new ExtensionSorter($log),
-                $log
-            ),
-            bootstrapper = new ApplicationBootstrapper(
-                angular,
-                openmct.element,
-                $log
-            ),
-            initializer = new FrameworkInitializer(
-                loader,
-                resolver,
-                registrar,
-                bootstrapper
-            );
+                new ExtensionResolver(new ImplementationLoader({}), $log),
+                $log),
+            registrar =
+                new ExtensionRegistrar(app, new CustomRegistrars(app, $log),
+                                       new ExtensionSorter($log), $log),
+            bootstrapper =
+                new ApplicationBootstrapper(angular, openmct.element, $log),
+            initializer = new FrameworkInitializer(loader, resolver, registrar,
+                                                   bootstrapper);
 
         // Override of angular1.6 ! hashPrefix
-        app.config(['$locationProvider', function ($locationProvider) {
-            $locationProvider.hashPrefix('');
-        }]);
+        app.config([
+          '$locationProvider',
+          function($locationProvider) { $locationProvider.hashPrefix(''); }
+        ]);
 
         // Apply logging levels; this must be done now, before the
         // first log statement.
@@ -99,7 +68,7 @@ define([
         // Initialize the application
         $log.info("Initializing application.");
         return initializer.runApplication();
-    };
+      };
 
-    return FrameworkLayer;
-});
+      return FrameworkLayer;
+    });

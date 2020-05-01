@@ -19,60 +19,53 @@
  * this source code distribution or the Licensing information page available
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
-import Preview from './Preview.vue';
 import Vue from 'vue';
 
+import Preview from './Preview.vue';
+
 export default class PreviewAction {
-    constructor(openmct) {
-        /**
-         * Metadata
-         */
-        this.name = 'Preview';
-        this.key = 'preview';
-        this.description = 'Preview in large dialog';
-        this.cssClass = 'icon-eye-open';
+  constructor(openmct) {
+    /**
+     * Metadata
+     */
+    this.name = 'Preview';
+    this.key = 'preview';
+    this.description = 'Preview in large dialog';
+    this.cssClass = 'icon-eye-open';
 
-        /**
-         * Dependencies
-         */
-        this._openmct = openmct;
-    }
-    invoke(objectPath) {
-        let preview = new Vue({
-            components: {
-                Preview
-            },
-            provide: {
-                openmct: this._openmct,
-                objectPath: objectPath
-            },
-            template: '<Preview></Preview>'
-        });
-        preview.$mount();
+    /**
+     * Dependencies
+     */
+    this._openmct = openmct;
+  }
+  invoke(objectPath) {
+    let preview = new Vue({
+      components : {Preview},
+      provide : {openmct : this._openmct, objectPath : objectPath},
+      template : '<Preview></Preview>'
+    });
+    preview.$mount();
 
-        let overlay = this._openmct.overlays.overlay({
-            element: preview.$el,
-            size: 'large',
-            buttons: [
-                {
-                    label: 'Done',
-                    callback: () => overlay.dismiss()
-                }
-            ],
-            onDestroy: () => preview.$destroy()
-        });
-    }
-    appliesTo(objectPath) {
-        return !this._isNavigatedObject(objectPath) && !this._preventPreview(objectPath);
-    }
-    _isNavigatedObject(objectPath) {
-        let targetObject = objectPath[0];
-        let navigatedObject = this._openmct.router.path[0];
-        return targetObject.identifier.namespace === navigatedObject.identifier.namespace &&
-            targetObject.identifier.key === navigatedObject.identifier.key;
-    }
-    _preventPreview(objectPath) {
-        const noPreviewTypes = ['folder'];
-        return noPreviewTypes.includes(objectPath[0].type);
-    }
+    let overlay = this._openmct.overlays.overlay({
+      element : preview.$el,
+      size : 'large',
+      buttons : [ {label : 'Done', callback : () => overlay.dismiss()} ],
+      onDestroy : () => preview.$destroy()
+    });
+  }
+  appliesTo(objectPath) {
+    return !this._isNavigatedObject(objectPath) &&
+           !this._preventPreview(objectPath);
+  }
+  _isNavigatedObject(objectPath) {
+    let targetObject = objectPath[0];
+    let navigatedObject = this._openmct.router.path[0];
+    return targetObject.identifier.namespace ===
+               navigatedObject.identifier.namespace &&
+           targetObject.identifier.key === navigatedObject.identifier.key;
+  }
+  _preventPreview(objectPath) {
+    const noPreviewTypes = [ 'folder' ];
+    return noPreviewTypes.includes(objectPath[0].type);
+  }
 }
