@@ -20,49 +20,55 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import Vue from 'vue';
+import Vue from "vue";
 
-import ConditionSet from './components/ConditionSet.vue';
+import ConditionSet from "./components/ConditionSet.vue";
 
 const DEFAULT_VIEW_PRIORITY = 100;
 
 export default class ConditionSetViewProvider {
   constructor(openmct) {
     this.openmct = openmct;
-    this.name = 'Conditions View';
-    this.key = 'conditionSet.view';
-    this.cssClass = 'icon-conditional';
+    this.name = "Conditions View";
+    this.key = "conditionSet.view";
+    this.cssClass = "icon-conditional";
   }
 
-  canView(domainObject) { return domainObject.type === 'conditionSet'; }
+  canView(domainObject) {
+    return domainObject.type === "conditionSet";
+  }
 
-  canEdit(domainObject) { return domainObject.type === 'conditionSet'; }
+  canEdit(domainObject) {
+    return domainObject.type === "conditionSet";
+  }
 
   view(domainObject, objectPath) {
     let component;
     const openmct = this.openmct;
     return {
-      show : (container, isEditing) => {
+      show: (container, isEditing) => {
         component = new Vue({
-          el : container,
-          components : {ConditionSet},
-          provide : {openmct, domainObject, objectPath},
+          el: container,
+          components: { ConditionSet },
+          provide: { openmct, domainObject, objectPath },
           data() {
-            return { isEditing }
+            return { isEditing };
           },
-          template : '<condition-set :isEditing="isEditing"></condition-set>'
+          template: '<condition-set :isEditing="isEditing"></condition-set>',
         });
       },
-      onEditModeChange : (isEditing) => { component.isEditing = isEditing; },
-      destroy : () => {
+      onEditModeChange: (isEditing) => {
+        component.isEditing = isEditing;
+      },
+      destroy: () => {
         component.$destroy();
         component = undefined;
-      }
+      },
     };
   }
 
   priority(domainObject) {
-    if (domainObject.type === 'conditionSet') {
+    if (domainObject.type === "conditionSet") {
       return Number.MAX_VALUE;
     } else {
       return DEFAULT_VIEW_PRIORITY;

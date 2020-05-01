@@ -19,43 +19,53 @@
  * this source code distribution or the Licensing information page available
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
-const NONE_VALUE = '__no_value';
+const NONE_VALUE = "__no_value";
 
 const styleProps = {
-  backgroundColor : {
-    svgProperty : 'fill',
-    noneValue : NONE_VALUE,
-    applicableForType : type => {
-      return !type ? true
-                   : (type === 'text-view' || type === 'telemetry-view' ||
-                      type === 'box-view' || type === 'subobject-view');
-    }
+  backgroundColor: {
+    svgProperty: "fill",
+    noneValue: NONE_VALUE,
+    applicableForType: (type) => {
+      return !type
+        ? true
+        : type === "text-view" ||
+            type === "telemetry-view" ||
+            type === "box-view" ||
+            type === "subobject-view";
+    },
   },
-  border : {
-    svgProperty : 'stroke',
-    noneValue : NONE_VALUE,
-    applicableForType : type => {
-      return !type ? true
-                   : (type === 'text-view' || type === 'telemetry-view' ||
-                      type === 'box-view' || type === 'image-view' ||
-                      type === 'line-view' || type === 'subobject-view');
-    }
+  border: {
+    svgProperty: "stroke",
+    noneValue: NONE_VALUE,
+    applicableForType: (type) => {
+      return !type
+        ? true
+        : type === "text-view" ||
+            type === "telemetry-view" ||
+            type === "box-view" ||
+            type === "image-view" ||
+            type === "line-view" ||
+            type === "subobject-view";
+    },
   },
-  color : {
-    svgProperty : 'color',
-    noneValue : NONE_VALUE,
-    applicableForType : type => {
-      return !type ? true
-                   : (type === 'text-view' || type === 'telemetry-view' ||
-                      type === 'subobject-view');
-    }
+  color: {
+    svgProperty: "color",
+    noneValue: NONE_VALUE,
+    applicableForType: (type) => {
+      return !type
+        ? true
+        : type === "text-view" ||
+            type === "telemetry-view" ||
+            type === "subobject-view";
+    },
   },
-  imageUrl : {
-    svgProperty : 'url',
-    noneValue : '',
-    applicableForType :
-        type => { return !type ? false : type === 'image-view'; }
-  }
+  imageUrl: {
+    svgProperty: "url",
+    noneValue: "",
+    applicableForType: (type) => {
+      return !type ? false : type === "image-view";
+    },
+  },
 };
 
 const aggregateStyleValues = (accumulator, currentStyle) => {
@@ -65,7 +75,7 @@ const aggregateStyleValues = (accumulator, currentStyle) => {
     if (!accumulator[property]) {
       accumulator[property] = [];
     }
-    const found = styleKeys.find(key => key === property);
+    const found = styleKeys.find((key) => key === property);
     if (found) {
       accumulator[property].push(currentStyle[found]);
     }
@@ -77,8 +87,10 @@ const aggregateStyleValues = (accumulator, currentStyle) => {
 // Styles that are common to all items but don't have the same value are added
 // to the mixedStyles list
 export const getConsolidatedStyleValues = (multipleItemStyles) => {
-  let aggregatedStyleValues =
-      multipleItemStyles.reduce(aggregateStyleValues, {});
+  let aggregatedStyleValues = multipleItemStyles.reduce(
+    aggregateStyleValues,
+    {}
+  );
 
   let styleValues = {};
   let mixedStyles = [];
@@ -86,20 +98,22 @@ export const getConsolidatedStyleValues = (multipleItemStyles) => {
   properties.forEach((property) => {
     const values = aggregatedStyleValues[property];
     if (values.length) {
-      if (values.every(value => value === values[0])) {
+      if (values.every((value) => value === values[0])) {
         styleValues[property] = values[0];
       } else {
-        styleValues[property] = '';
+        styleValues[property] = "";
         mixedStyles.push(property);
       }
     }
   });
-  return {styles : styleValues, mixedStyles};
+  return { styles: styleValues, mixedStyles };
 };
 
 const getStaticStyleForItem = (domainObject, id) => {
-  let domainObjectStyles = domainObject && domainObject.configuration &&
-                           domainObject.configuration.objectStyles;
+  let domainObjectStyles =
+    domainObject &&
+    domainObject.configuration &&
+    domainObject.configuration.objectStyles;
   if (domainObjectStyles) {
     if (id) {
       if (domainObjectStyles[id] && domainObjectStyles[id].staticStyle) {
@@ -112,12 +126,16 @@ const getStaticStyleForItem = (domainObject, id) => {
 };
 
 export const getConditionalStyleForItem = (domainObject, id) => {
-  let domainObjectStyles = domainObject && domainObject.configuration &&
-                           domainObject.configuration.objectStyles;
+  let domainObjectStyles =
+    domainObject &&
+    domainObject.configuration &&
+    domainObject.configuration.objectStyles;
   if (domainObjectStyles) {
     if (id) {
-      if (domainObjectStyles[id] &&
-          domainObjectStyles[id].conditionSetIdentifier) {
+      if (
+        domainObjectStyles[id] &&
+        domainObjectStyles[id].conditionSetIdentifier
+      ) {
         return domainObjectStyles[id].styles;
       }
     } else if (domainObjectStyles.staticStyle) {
@@ -135,7 +153,7 @@ export const getApplicableStylesForItem = (domainObject, item) => {
   let staticStyle = getStaticStyleForItem(domainObject, id);
 
   const properties = Object.keys(styleProps);
-  properties.forEach(property => {
+  properties.forEach((property) => {
     const styleProp = styleProps[property];
     if (styleProp.applicableForType(type)) {
       let defaultValue;
@@ -145,7 +163,7 @@ export const getApplicableStylesForItem = (domainObject, item) => {
         defaultValue = item[styleProp.svgProperty];
       }
       style[property] =
-          defaultValue === undefined ? styleProp.noneValue : defaultValue;
+        defaultValue === undefined ? styleProp.noneValue : defaultValue;
     }
   });
 
@@ -158,10 +176,10 @@ export const getStylesWithoutNoneValue = (style) => {
   }
   let styleObj = {};
   const keys = Object.keys(style);
-  keys.forEach(key => {
-    if ((typeof style[key] === 'string')) {
-      if (style[key].indexOf('__no_value') > -1) {
-        style[key] = '';
+  keys.forEach((key) => {
+    if (typeof style[key] === "string") {
+      if (style[key].indexOf("__no_value") > -1) {
+        style[key] = "";
       } else {
         styleObj[key] = style[key];
       }

@@ -20,38 +20,49 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define([ 'lodash', 'printj' ], function(_, printj) {
+define(["lodash", "printj"], function (_, printj) {
   // TODO: needs reference to formatService;
   function TelemetryValueFormatter(valueMetadata, formatService) {
     var numberFormatter = {
-      parse : function(x) { return Number(x); },
-      format : function(x) { return x; },
-      validate : function(x) { return true; }
+      parse: function (x) {
+        return Number(x);
+      },
+      format: function (x) {
+        return x;
+      },
+      validate: function (x) {
+        return true;
+      },
     };
 
     this.valueMetadata = valueMetadata;
     try {
-      this.formatter =
-          formatService.getFormat(valueMetadata.format, valueMetadata);
+      this.formatter = formatService.getFormat(
+        valueMetadata.format,
+        valueMetadata
+      );
     } catch (e) {
       // TODO: Better formatting
       this.formatter = numberFormatter;
     }
 
-    if (valueMetadata.format === 'enum') {
+    if (valueMetadata.format === "enum") {
       this.formatter = {};
-      this.enumerations = valueMetadata.enumerations.reduce(function(vm, e) {
-        vm.byValue[e.value] = e.string;
-        vm.byString[e.string] = e.value;
-        return vm;
-      }, {byValue : {}, byString : {}});
-      this.formatter.format = function(value) {
+      this.enumerations = valueMetadata.enumerations.reduce(
+        function (vm, e) {
+          vm.byValue[e.value] = e.string;
+          vm.byString[e.string] = e.value;
+          return vm;
+        },
+        { byValue: {}, byString: {} }
+      );
+      this.formatter.format = function (value) {
         if (this.enumerations.byValue.hasOwnProperty(value)) {
           return this.enumerations.byValue[value];
         }
         return value;
       }.bind(this);
-      this.formatter.parse = function(string) {
+      this.formatter.parse = function (string) {
         if (typeof string === "string") {
           if (this.enumerations.byString.hasOwnProperty(string)) {
             return this.enumerations.byString[string];
@@ -64,35 +75,38 @@ define([ 'lodash', 'printj' ], function(_, printj) {
     if (valueMetadata.formatString) {
       var baseFormat = this.formatter.format;
       var formatString = valueMetadata.formatString;
-      this.formatter.format = function(value) {
+      this.formatter.format = function (value) {
         return printj.sprintf(formatString, baseFormat.call(this, value));
       };
     }
-    if (valueMetadata.format === 'string') {
-      this.formatter.parse = function(value) {
+    if (valueMetadata.format === "string") {
+      this.formatter.parse = function (value) {
         if (value === undefined) {
-          return '';
+          return "";
         }
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
           return value;
         } else {
           return value.toString();
         }
       };
-      this.formatter.format = function(value) { return value; };
-      this.formatter.validate = function(
-          value) { return typeof value === 'string'; };
+      this.formatter.format = function (value) {
+        return value;
+      };
+      this.formatter.validate = function (value) {
+        return typeof value === "string";
+      };
     }
   }
 
-  TelemetryValueFormatter.prototype.parse = function(datum) {
+  TelemetryValueFormatter.prototype.parse = function (datum) {
     if (_.isObject(datum)) {
       return this.formatter.parse(datum[this.valueMetadata.source]);
     }
     return this.formatter.parse(datum);
   };
 
-  TelemetryValueFormatter.prototype.format = function(datum) {
+  TelemetryValueFormatter.prototype.format = function (datum) {
     if (_.isObject(datum)) {
       return this.formatter.format(datum[this.valueMetadata.source]);
     }

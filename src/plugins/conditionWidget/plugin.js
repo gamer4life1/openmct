@@ -20,36 +20,38 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import ConditionWidgetViewProvider from './ConditionWidgetViewProvider.js';
+import ConditionWidgetViewProvider from "./ConditionWidgetViewProvider.js";
 
 export default function plugin() {
   return function install(openmct) {
     openmct.objectViews.addProvider(new ConditionWidgetViewProvider(openmct));
 
-    openmct.types.addType('conditionWidget', {
-      name : "Condition Widget",
-      description :
-          "A button that can be used on its own, or dynamically styled with a Condition Set.",
-      creatable : true,
-      cssClass : 'icon-condition-widget',
-      initialize(domainObject) { domainObject.label = 'Condition Widget'; },
-      form : [
+    openmct.types.addType("conditionWidget", {
+      name: "Condition Widget",
+      description:
+        "A button that can be used on its own, or dynamically styled with a Condition Set.",
+      creatable: true,
+      cssClass: "icon-condition-widget",
+      initialize(domainObject) {
+        domainObject.label = "Condition Widget";
+      },
+      form: [
         {
-          "key" : "label",
-          "name" : "Label",
-          "control" : "textfield",
-          property : [ "label" ],
-          "required" : true,
-          "cssClass" : "l-input"
+          key: "label",
+          name: "Label",
+          control: "textfield",
+          property: ["label"],
+          required: true,
+          cssClass: "l-input",
         },
         {
-          "key" : "url",
-          "name" : "URL",
-          "control" : "textfield",
-          "required" : false,
-          "cssClass" : "l-input-lg"
-        }
-      ]
+          key: "url",
+          name: "URL",
+          control: "textfield",
+          required: false,
+          cssClass: "l-input-lg",
+        },
+      ],
     });
   };
 }

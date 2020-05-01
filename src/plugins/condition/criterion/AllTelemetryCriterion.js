@@ -20,13 +20,12 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import {evaluateResults} from "../utils/evaluator";
-import {getLatestTimestamp} from '../utils/time';
+import { evaluateResults } from "../utils/evaluator";
+import { getLatestTimestamp } from "../utils/time";
 
-import TelemetryCriterion from './TelemetryCriterion';
+import TelemetryCriterion from "./TelemetryCriterion";
 
 export default class AllTelemetryCriterion extends TelemetryCriterion {
-
   /**
    * Subscribes/Unsubscribes to telemetry and emits the result
    * of operations performed on the telemetry data returned and a given input
@@ -42,30 +41,36 @@ export default class AllTelemetryCriterion extends TelemetryCriterion {
 
   initialize() {
     this.telemetryObjects = {
-        ...this.telemetryDomainObjectDefinition.telemetryObjects};
+      ...this.telemetryDomainObjectDefinition.telemetryObjects,
+    };
     this.telemetryDataCache = {};
   }
 
   isValid() {
-    return (this.telemetry === 'any' || this.telemetry === 'all') &&
-           this.metadata && this.operation;
+    return (
+      (this.telemetry === "any" || this.telemetry === "all") &&
+      this.metadata &&
+      this.operation
+    );
   }
 
   updateTelemetry(telemetryObjects) {
-    this.telemetryObjects = {...telemetryObjects};
+    this.telemetryObjects = { ...telemetryObjects };
     this.removeTelemetryDataCache();
   }
 
   removeTelemetryDataCache() {
     const telemetryCacheIds = Object.keys(this.telemetryDataCache);
-    Object.values(this.telemetryObjects).forEach(telemetryObject => {
+    Object.values(this.telemetryObjects).forEach((telemetryObject) => {
       const id = this.openmct.objects.makeKeyString(telemetryObject.identifier);
       const foundIndex = telemetryCacheIds.indexOf(id);
       if (foundIndex > -1) {
         telemetryCacheIds.splice(foundIndex, 1);
       }
     });
-    telemetryCacheIds.forEach(id => { delete (this.telemetryDataCache[id]); });
+    telemetryCacheIds.forEach((id) => {
+      delete this.telemetryDataCache[id];
+    });
   }
 
   formatData(data, telemetryObjects) {
@@ -83,13 +88,16 @@ export default class AllTelemetryCriterion extends TelemetryCriterion {
     });
 
     const datum = {
-      result : evaluateResults(Object.values(this.telemetryDataCache),
-                               this.telemetry)
+      result: evaluateResults(
+        Object.values(this.telemetryDataCache),
+        this.telemetry
+      ),
     };
 
     if (data) {
-      this.openmct.time.getAllTimeSystems().forEach(
-          timeSystem => {datum[timeSystem.key] = data[timeSystem.key]});
+      this.openmct.time.getAllTimeSystems().forEach((timeSystem) => {
+        datum[timeSystem.key] = data[timeSystem.key];
+      });
     }
     return datum;
   }
@@ -98,34 +106,38 @@ export default class AllTelemetryCriterion extends TelemetryCriterion {
     const validatedData = this.isValid() ? data : {};
 
     if (validatedData) {
-      this.telemetryDataCache[validatedData.id] =
-          this.computeResult(validatedData);
+      this.telemetryDataCache[validatedData.id] = this.computeResult(
+        validatedData
+      );
     }
 
-    Object.values(telemetryObjects).forEach(telemetryObject => {
+    Object.values(telemetryObjects).forEach((telemetryObject) => {
       const id = this.openmct.objects.makeKeyString(telemetryObject.identifier);
       if (this.telemetryDataCache[id] === undefined) {
         this.telemetryDataCache[id] = false;
       }
     });
 
-    this.result =
-        evaluateResults(Object.values(this.telemetryDataCache), this.telemetry);
+    this.result = evaluateResults(
+      Object.values(this.telemetryDataCache),
+      this.telemetry
+    );
   }
 
   requestLAD(telemetryObjects) {
-    const options = {strategy : 'latest', size : 1};
+    const options = { strategy: "latest", size: 1 };
 
     if (!this.isValid()) {
       return this.formatData({}, telemetryObjects);
     }
 
     let keys = Object.keys(Object.assign({}, telemetryObjects));
-    const telemetryRequests = keys.map(
-        key => this.openmct.telemetry.request(telemetryObjects[key], options));
+    const telemetryRequests = keys.map((key) =>
+      this.openmct.telemetry.request(telemetryObjects[key], options)
+    );
 
     let telemetryDataCache = {};
-    return Promise.all(telemetryRequests).then(telemetryRequestsResults => {
+    return Promise.all(telemetryRequests).then((telemetryRequestsResults) => {
       let latestTimestamp;
       const timeSystems = this.openmct.time.getAllTimeSystems();
       const timeSystem = this.openmct.time.timeSystem();
@@ -133,22 +145,30 @@ export default class AllTelemetryCriterion extends TelemetryCriterion {
       telemetryRequestsResults.forEach((results, index) => {
         const latestDatum = results.length ? results[results.length - 1] : {};
         const datumId = keys[index];
-        const normalizedDatum =
-            this.createNormalizedDatum(latestDatum, telemetryObjects[datumId]);
+        const normalizedDatum = this.createNormalizedDatum(
+          latestDatum,
+          telemetryObjects[datumId]
+        );
 
         telemetryDataCache[datumId] = this.computeResult(normalizedDatum);
 
-        latestTimestamp = getLatestTimestamp(latestTimestamp, normalizedDatum,
-                                             timeSystems, timeSystem);
+        latestTimestamp = getLatestTimestamp(
+          latestTimestamp,
+          normalizedDatum,
+          timeSystems,
+          timeSystem
+        );
       });
 
       const datum = {
-        result :
-            evaluateResults(Object.values(telemetryDataCache), this.telemetry),
-        ...latestTimestamp
+        result: evaluateResults(
+          Object.values(telemetryDataCache),
+          this.telemetry
+        ),
+        ...latestTimestamp,
       };
 
-      return {id : this.id, data : datum};
+      return { id: this.id, data: datum };
     });
   }
 

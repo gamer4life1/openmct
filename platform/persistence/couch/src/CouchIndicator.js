@@ -20,7 +20,7 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define([], function() {
+define([], function () {
   // Set of connection states; changing among these states will be
   // reflected in the indicator's appearance.
   // CONNECTED: Everything nominal, expect to be able to read/write.
@@ -28,27 +28,27 @@ define([], function() {
   // SEMICONNECTED: Connected to the database, but it reported an error.
   // PENDING: Still trying to connect, and haven't failed yet.
   var CONNECTED = {
-    text : "Connected",
-    glyphClass : "ok",
-    statusClass : "s-status-on",
-    description : "Connected to the domain object database."
-  },
-      DISCONNECTED = {
-        text : "Disconnected",
-        glyphClass : "err",
-        statusClass : "s-status-caution",
-        description : "Unable to connect to the domain object database."
-      },
-      SEMICONNECTED = {
-        text : "Unavailable",
-        glyphClass : "caution",
-        statusClass : "s-status-caution",
-        description : "Database does not exist or is unavailable."
-      },
-      PENDING = {
-        text : "Checking connection...",
-        statusClass : "s-status-caution"
-      };
+      text: "Connected",
+      glyphClass: "ok",
+      statusClass: "s-status-on",
+      description: "Connected to the domain object database.",
+    },
+    DISCONNECTED = {
+      text: "Disconnected",
+      glyphClass: "err",
+      statusClass: "s-status-caution",
+      description: "Unable to connect to the domain object database.",
+    },
+    SEMICONNECTED = {
+      text: "Unavailable",
+      glyphClass: "caution",
+      statusClass: "s-status-caution",
+      description: "Database does not exist or is unavailable.",
+    },
+    PENDING = {
+      text: "Checking connection...",
+      statusClass: "s-status-caution",
+    };
 
   /**
    * Indicator for the current CouchDB connection. Polls CouchDB
@@ -74,7 +74,9 @@ define([], function() {
     this.interval = interval;
 
     // Callback if the HTTP request to Couch fails
-    function handleError() { self.state = DISCONNECTED; }
+    function handleError() {
+      self.state = DISCONNECTED;
+    }
 
     // Callback if the HTTP request succeeds. CouchDB may
     // report an error, so check for that.
@@ -93,17 +95,21 @@ define([], function() {
     $interval(updateIndicator, interval);
   }
 
-  CouchIndicator.prototype.getCssClass = function() {
+  CouchIndicator.prototype.getCssClass = function () {
     return "c-indicator--clickable icon-suitcase " + this.state.statusClass;
   };
 
-  CouchIndicator.prototype.getGlyphClass =
-      function() { return this.state.glyphClass; };
+  CouchIndicator.prototype.getGlyphClass = function () {
+    return this.state.glyphClass;
+  };
 
-  CouchIndicator.prototype.getText = function() { return this.state.text; };
+  CouchIndicator.prototype.getText = function () {
+    return this.state.text;
+  };
 
-  CouchIndicator.prototype.getDescription =
-      function() { return this.state.description; };
+  CouchIndicator.prototype.getDescription = function () {
+    return this.state.description;
+  };
 
   return CouchIndicator;
 });

@@ -20,58 +20,69 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define(
-    [ './components/table.vue', './TelemetryTable', 'vue' ],
-    function(TableComponent, TelemetryTable, Vue) {
-      function TelemetryTableViewProvider(openmct) {
-        function hasTelemetry(domainObject) {
-          if (!domainObject.hasOwnProperty('telemetry')) {
-            return false;
-          }
-          let metadata = openmct.telemetry.getMetadata(domainObject);
-          return metadata.values().length > 0;
-        }
-        return {
-          key : 'table',
-          name : 'Telemetry Table',
-          cssClass : 'icon-tabular-realtime',
-          canView(domainObject) {
-            return domainObject.type === 'table' || hasTelemetry(domainObject)
-          },
-          canEdit(domainObject) { return domainObject.type === 'table'; },
-          view(domainObject, objectPath) {
-            let table = new TelemetryTable(domainObject, openmct);
-            let component;
-
-            let markingProp = {
-              enable : true,
-              useAlternateControlBar : false,
-              rowName : '',
-              rowNamePlural : ''
-            };
-
-            return {
-              show: function(element, editMode) {
-                component = new Vue({
-                  el : element,
-                  components : {TableComponent : TableComponent.default},
-                  data() { return {isEditing : editMode, markingProp}; },
-                  provide : {openmct, table, objectPath},
-                  template :
-                      '<table-component :isEditing="isEditing" :marking="markingProp"/>'
-                });
-              }, onEditModeChange(editMode) {
-                component.isEditing = editMode;
-              }
-              , onClearData() { table.clearData(); }
-              , destroy: function(element) {
-                component.$destroy();
-                component = undefined;
-              }
-            }
-          },
-          priority() { return 1; }
-        };
+define(["./components/table.vue", "./TelemetryTable", "vue"], function (
+  TableComponent,
+  TelemetryTable,
+  Vue
+) {
+  function TelemetryTableViewProvider(openmct) {
+    function hasTelemetry(domainObject) {
+      if (!domainObject.hasOwnProperty("telemetry")) {
+        return false;
       }
-      return TelemetryTableViewProvider;
-    });
+      let metadata = openmct.telemetry.getMetadata(domainObject);
+      return metadata.values().length > 0;
+    }
+    return {
+      key: "table",
+      name: "Telemetry Table",
+      cssClass: "icon-tabular-realtime",
+      canView(domainObject) {
+        return domainObject.type === "table" || hasTelemetry(domainObject);
+      },
+      canEdit(domainObject) {
+        return domainObject.type === "table";
+      },
+      view(domainObject, objectPath) {
+        let table = new TelemetryTable(domainObject, openmct);
+        let component;
+
+        let markingProp = {
+          enable: true,
+          useAlternateControlBar: false,
+          rowName: "",
+          rowNamePlural: "",
+        };
+
+        return {
+          show: function (element, editMode) {
+            component = new Vue({
+              el: element,
+              components: { TableComponent: TableComponent.default },
+              data() {
+                return { isEditing: editMode, markingProp };
+              },
+              provide: { openmct, table, objectPath },
+              template:
+                '<table-component :isEditing="isEditing" :marking="markingProp"/>',
+            });
+          },
+          onEditModeChange(editMode) {
+            component.isEditing = editMode;
+          },
+          onClearData() {
+            table.clearData();
+          },
+          destroy: function (element) {
+            component.$destroy();
+            component = undefined;
+          },
+        };
+      },
+      priority() {
+        return 1;
+      },
+    };
+  }
+  return TelemetryTableViewProvider;
+});

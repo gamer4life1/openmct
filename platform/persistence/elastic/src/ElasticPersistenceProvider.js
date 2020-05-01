@@ -25,11 +25,13 @@
  * store documents.
  * @namespace platform/persistence/elastic
  */
-define([], function() {
+define([], function () {
   // JSLint doesn't like underscore-prefixed properties,
   // so hide them here.
-  var SRC = "_source", CONFLICT = 409, SEQ_NO = "_seq_no",
-      PRIMARY_TERM = "_primary_term";
+  var SRC = "_source",
+    CONFLICT = 409,
+    SEQ_NO = "_seq_no",
+    PRIMARY_TERM = "_primary_term";
 
   /**
    * The ElasticPersistenceProvider reads and writes JSON documents
@@ -45,7 +47,7 @@ define([], function() {
    * @param {stirng} path the path to domain objects within ElasticSearch
    */
   function ElasticPersistenceProvider($http, $q, space, root, path) {
-    this.spaces = [ space ];
+    this.spaces = [space];
     this.revs = {};
     this.$http = $http;
     this.$q = $q;
@@ -55,35 +57,46 @@ define([], function() {
 
   // Issue a request using $http; get back the plain JS object
   // from the expected JSON response
-  ElasticPersistenceProvider.prototype.request = function(subpath, method,
-                                                          value, params) {
-    return this
-        .$http({
-          method : method,
-          url : this.root + '/' + this.path + '/' + subpath,
-          params : params,
-          data : value
-        })
-        .then(function(response) { return response.data; },
-              function(response) { return (response || {}).data; });
+  ElasticPersistenceProvider.prototype.request = function (
+    subpath,
+    method,
+    value,
+    params
+  ) {
+    return this.$http({
+      method: method,
+      url: this.root + "/" + this.path + "/" + subpath,
+      params: params,
+      data: value,
+    }).then(
+      function (response) {
+        return response.data;
+      },
+      function (response) {
+        return (response || {}).data;
+      }
+    );
   };
 
   // Shorthand methods for GET/PUT methods
-  ElasticPersistenceProvider.prototype.get = function(
-      subpath) { return this.request(subpath, "GET"); };
-  ElasticPersistenceProvider.prototype.put = function(
-      subpath, value,
-      params) { return this.request(subpath, "PUT", value, params); };
-  ElasticPersistenceProvider.prototype.del = function(
-      subpath) { return this.request(subpath, "DELETE"); };
+  ElasticPersistenceProvider.prototype.get = function (subpath) {
+    return this.request(subpath, "GET");
+  };
+  ElasticPersistenceProvider.prototype.put = function (subpath, value, params) {
+    return this.request(subpath, "PUT", value, params);
+  };
+  ElasticPersistenceProvider.prototype.del = function (subpath) {
+    return this.request(subpath, "DELETE");
+  };
 
   // Handle an update error
-  ElasticPersistenceProvider.prototype.handleError = function(response, key) {
-    var error = new Error("Persistence error."), $q = this.$q;
+  ElasticPersistenceProvider.prototype.handleError = function (response, key) {
+    var error = new Error("Persistence error."),
+      $q = this.$q;
     if ((response || {}).status === CONFLICT) {
       error.key = "revision";
       // Load the updated model, then reject the promise
-      return this.get(key).then(function(res) {
+      return this.get(key).then(function (res) {
         error.model = res[SRC];
         return $q.reject(error);
       });
@@ -93,7 +106,7 @@ define([], function() {
   };
 
   // Get a domain object model out of ElasticSearch's response
-  ElasticPersistenceProvider.prototype.getModel = function(response) {
+  ElasticPersistenceProvider.prototype.getModel = function (response) {
     if (response && response[SRC]) {
       this.revs[response[SEQ_NO]] = response[SEQ_NO];
       this.revs[response[PRIMARY_TERM]] = response[PRIMARY_TERM];
@@ -106,7 +119,10 @@ define([], function() {
   // Check the response to a create/update/delete request;
   // track the rev if it's valid, otherwise return false to
   // indicate that the request failed.
-  ElasticPersistenceProvider.prototype.checkResponse = function(response, key) {
+  ElasticPersistenceProvider.prototype.checkResponse = function (
+    response,
+    key
+  ) {
     if (response && !response.error) {
       this.revs[SEQ_NO] = response[SEQ_NO];
       this.revs[PRIMARY_TERM] = response[PRIMARY_TERM];
@@ -117,31 +133,42 @@ define([], function() {
   };
 
   // Public API
-  ElasticPersistenceProvider.prototype.listSpaces =
-      function() { return this.$q.when(this.spaces); };
+  ElasticPersistenceProvider.prototype.listSpaces = function () {
+    return this.$q.when(this.spaces);
+  };
 
-  ElasticPersistenceProvider.prototype.listObjects = function() {
+  ElasticPersistenceProvider.prototype.listObjects = function () {
     // Not yet implemented
     return this.$q.when([]);
   };
 
-  ElasticPersistenceProvider.prototype.createObject = function(space, key,
-                                                               value) {
+  ElasticPersistenceProvider.prototype.createObject = function (
+    space,
+    key,
+    value
+  ) {
     return this.put(key, value).then(this.checkResponse.bind(this));
   };
 
-  ElasticPersistenceProvider.prototype.readObject = function(
-      space, key) { return this.get(key).then(this.getModel.bind(this)); };
+  ElasticPersistenceProvider.prototype.readObject = function (space, key) {
+    return this.get(key).then(this.getModel.bind(this));
+  };
 
-  ElasticPersistenceProvider.prototype.updateObject = function(space, key,
-                                                               value) {
+  ElasticPersistenceProvider.prototype.updateObject = function (
+    space,
+    key,
+    value
+  ) {
     var self = this;
-    function checkUpdate(response) { return self.checkResponse(response, key); }
+    function checkUpdate(response) {
+      return self.checkResponse(response, key);
+    }
     return this.put(key, value).then(checkUpdate);
   };
 
-  ElasticPersistenceProvider.prototype.deleteObject = function(
-      space, key) { return this.del(key).then(this.checkResponse.bind(this)); };
+  ElasticPersistenceProvider.prototype.deleteObject = function (space, key) {
+    return this.del(key).then(this.checkResponse.bind(this));
+  };
 
   return ElasticPersistenceProvider;
 });

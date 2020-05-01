@@ -1,41 +1,44 @@
-import Vue from 'vue';
+import Vue from "vue";
 
-import ImageryViewLayout from './components/ImageryViewLayout.vue';
+import ImageryViewLayout from "./components/ImageryViewLayout.vue";
 
 export default function ImageryViewProvider(openmct) {
-  const type = 'example.imagery';
+  const type = "example.imagery";
 
-  const hasImageTelemetry = function(domainObject) {
+  const hasImageTelemetry = function (domainObject) {
     const metadata = openmct.telemetry.getMetadata(domainObject);
     if (!metadata) {
       return false;
     }
 
-    return metadata.valuesForHints([ 'image' ]).length > 0;
+    return metadata.valuesForHints(["image"]).length > 0;
   };
 
   return {
-    key: type, name: 'Imagery Layout', cssClass: 'icon-image',
-        canView: function(
-            domainObject) { return hasImageTelemetry(domainObject); },
-        view: function(domainObject) {
-          let component;
+    key: type,
+    name: "Imagery Layout",
+    cssClass: "icon-image",
+    canView: function (domainObject) {
+      return hasImageTelemetry(domainObject);
+    },
+    view: function (domainObject) {
+      let component;
 
-          return {
-            show : function(element) {
-              component = new Vue({
-                el : element,
-                components : {ImageryViewLayout},
-                provide : {openmct, domainObject},
-                template :
-                    '<imagery-view-layout ref="ImageryLayout"></imagery-view-layout>'
-              });
-            },
-            destroy : function() {
-              component.$destroy();
-              component = undefined;
-            }
-          };
-        }
-  }
+      return {
+        show: function (element) {
+          component = new Vue({
+            el: element,
+            components: { ImageryViewLayout },
+            provide: { openmct, domainObject },
+            template:
+              '<imagery-view-layout ref="ImageryLayout"></imagery-view-layout>',
+          });
+        },
+        destroy: function () {
+          component.$destroy();
+          component = undefined;
+        },
+      };
+    },
+  };
 }

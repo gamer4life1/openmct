@@ -20,13 +20,13 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import EventEmitter from 'EventEmitter';
-import uuid from 'uuid';
+import EventEmitter from "EventEmitter";
+import uuid from "uuid";
 
 import AllTelemetryCriterion from "./criterion/AllTelemetryCriterion";
 import TelemetryCriterion from "./criterion/TelemetryCriterion";
-import {evaluateResults} from './utils/evaluator';
-import {getLatestTimestamp} from './utils/time';
+import { evaluateResults } from "./utils/evaluator";
+import { getLatestTimestamp } from "./utils/time";
 
 /*
  * conditionConfiguration = {
@@ -43,7 +43,6 @@ import {getLatestTimestamp} from './utils/time';
  * }
  */
 export default class ConditionClass extends EventEmitter {
-
   /**
    * Manages criteria and emits the result of - true or false - based on
    * criteria evaluated.
@@ -70,11 +69,11 @@ export default class ConditionClass extends EventEmitter {
 
   getResult(datum) {
     if (!datum || !datum.id) {
-      console.log('no data received');
+      console.log("no data received");
       return;
     }
 
-    this.criteria.forEach(criterion => {
+    this.criteria.forEach((criterion) => {
       if (this.isAnyOrAllTelemetry(criterion)) {
         criterion.getResult(datum, this.conditionManager.telemetryObjects);
       } else {
@@ -83,18 +82,24 @@ export default class ConditionClass extends EventEmitter {
     });
 
     this.result = evaluateResults(
-        this.criteria.map(criterion => criterion.result), this.trigger);
+      this.criteria.map((criterion) => criterion.result),
+      this.trigger
+    );
   }
 
   isAnyOrAllTelemetry(criterion) {
-    return (criterion.telemetry &&
-            (criterion.telemetry === 'all' || criterion.telemetry === 'any'));
+    return (
+      criterion.telemetry &&
+      (criterion.telemetry === "all" || criterion.telemetry === "any")
+    );
   }
 
   isTelemetryUsed(id) {
-    return this.criteria.some(criterion => {
-      return this.isAnyOrAllTelemetry(criterion) ||
-             criterion.telemetryObjectIdAsString === id;
+    return this.criteria.some((criterion) => {
+      return (
+        this.isAnyOrAllTelemetry(criterion) ||
+        criterion.telemetryObjectIdAsString === id
+      );
     });
   }
 
@@ -111,17 +116,17 @@ export default class ConditionClass extends EventEmitter {
 
   generateCriterion(criterionConfiguration) {
     return {
-      id : criterionConfiguration.id || uuid(),
-      telemetry : criterionConfiguration.telemetry || '',
-      telemetryObject :
-          this.conditionManager
-              .telemetryObjects[this.openmct.objects.makeKeyString(
-                  criterionConfiguration.telemetry)],
-      operation : criterionConfiguration.operation || '',
-      input : criterionConfiguration.input === undefined
-                  ? []
-                  : criterionConfiguration.input,
-      metadata : criterionConfiguration.metadata || ''
+      id: criterionConfiguration.id || uuid(),
+      telemetry: criterionConfiguration.telemetry || "",
+      telemetryObject: this.conditionManager.telemetryObjects[
+        this.openmct.objects.makeKeyString(criterionConfiguration.telemetry)
+      ],
+      operation: criterionConfiguration.operation || "",
+      input:
+        criterionConfiguration.input === undefined
+          ? []
+          : criterionConfiguration.input,
+      metadata: criterionConfiguration.metadata || "",
     };
   }
 
@@ -147,18 +152,25 @@ export default class ConditionClass extends EventEmitter {
    */
   addCriterion(criterionConfiguration) {
     let criterion;
-    let criterionConfigurationWithId =
-        this.generateCriterion(criterionConfiguration || null);
-    if (criterionConfiguration.telemetry &&
-        (criterionConfiguration.telemetry === 'any' ||
-         criterionConfiguration.telemetry === 'all')) {
-      criterion =
-          new AllTelemetryCriterion(criterionConfigurationWithId, this.openmct);
+    let criterionConfigurationWithId = this.generateCriterion(
+      criterionConfiguration || null
+    );
+    if (
+      criterionConfiguration.telemetry &&
+      (criterionConfiguration.telemetry === "any" ||
+        criterionConfiguration.telemetry === "all")
+    ) {
+      criterion = new AllTelemetryCriterion(
+        criterionConfigurationWithId,
+        this.openmct
+      );
     } else {
-      criterion =
-          new TelemetryCriterion(criterionConfigurationWithId, this.openmct);
+      criterion = new TelemetryCriterion(
+        criterionConfigurationWithId,
+        this.openmct
+      );
     }
-    criterion.on('criterionUpdated', (obj) => this.handleCriterionUpdated(obj));
+    criterion.on("criterionUpdated", (obj) => this.handleCriterionUpdated(obj));
     if (!this.criteria) {
       this.criteria = [];
     }
@@ -171,7 +183,7 @@ export default class ConditionClass extends EventEmitter {
 
     for (let i = 0, ii = this.criteria.length; i < ii; i++) {
       if (this.criteria[i].id === id) {
-        criterion = { item : this.criteria[i], index : i }
+        criterion = { item: this.criteria[i], index: i };
       }
     }
 
@@ -181,17 +193,22 @@ export default class ConditionClass extends EventEmitter {
   updateCriterion(id, criterionConfiguration) {
     let found = this.findCriterion(id);
     if (found) {
-      const newCriterionConfiguration =
-          this.generateCriterion(criterionConfiguration);
-      let newCriterion =
-          new TelemetryCriterion(newCriterionConfiguration, this.openmct);
-      newCriterion.on('criterionUpdated',
-                      (obj) => this.handleCriterionUpdated(obj));
+      const newCriterionConfiguration = this.generateCriterion(
+        criterionConfiguration
+      );
+      let newCriterion = new TelemetryCriterion(
+        newCriterionConfiguration,
+        this.openmct
+      );
+      newCriterion.on("criterionUpdated", (obj) =>
+        this.handleCriterionUpdated(obj)
+      );
 
       let criterion = found.item;
       criterion.unsubscribe();
-      criterion.off('criterionUpdated',
-                    (obj) => this.handleCriterionUpdated(obj));
+      criterion.off("criterionUpdated", (obj) =>
+        this.handleCriterionUpdated(obj)
+      );
       this.criteria.splice(found.index, 1, newCriterion);
     }
   }
@@ -200,8 +217,9 @@ export default class ConditionClass extends EventEmitter {
     let found = this.findCriterion(id);
     if (found) {
       let criterion = found.item;
-      criterion.off('criterionUpdated',
-                    (obj) => { this.handleCriterionUpdated(obj); });
+      criterion.off("criterionUpdated", (obj) => {
+        this.handleCriterionUpdated(obj);
+      });
       criterion.destroy();
       this.criteria.splice(found.index, 1);
 
@@ -220,30 +238,39 @@ export default class ConditionClass extends EventEmitter {
   requestLADConditionResult() {
     let latestTimestamp;
     let criteriaResults = {};
-    const criteriaRequests =
-        this.criteria.map(criterion => criterion.requestLAD(
-                              this.conditionManager.telemetryObjects));
+    const criteriaRequests = this.criteria.map((criterion) =>
+      criterion.requestLAD(this.conditionManager.telemetryObjects)
+    );
 
-    return Promise.all(criteriaRequests).then(results => {
-      results.forEach(resultObj => {
-        const {id, data, data : {result}} = resultObj;
+    return Promise.all(criteriaRequests).then((results) => {
+      results.forEach((resultObj) => {
+        const {
+          id,
+          data,
+          data: { result },
+        } = resultObj;
         if (this.findCriterion(id)) {
           criteriaResults[id] = !!result;
         }
-        latestTimestamp =
-            getLatestTimestamp(latestTimestamp, data, this.timeSystems,
-                               this.openmct.time.timeSystem());
+        latestTimestamp = getLatestTimestamp(
+          latestTimestamp,
+          data,
+          this.timeSystems,
+          this.openmct.time.timeSystem()
+        );
       });
       return {
-        id : this.id,
-        data : Object.assign({}, latestTimestamp, {
-          result : evaluateResults(Object.values(criteriaResults), this.trigger)
-        })
+        id: this.id,
+        data: Object.assign({}, latestTimestamp, {
+          result: evaluateResults(Object.values(criteriaResults), this.trigger),
+        }),
       };
     });
   }
 
-  getCriteria() { return this.criteria; }
+  getCriteria() {
+    return this.criteria;
+  }
 
   destroyCriteria() {
     let success = true;
@@ -255,5 +282,7 @@ export default class ConditionClass extends EventEmitter {
     return success;
   }
 
-  destroy() { this.destroyCriteria(); }
+  destroy() {
+    this.destroyCriteria();
+  }
 }

@@ -20,11 +20,10 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import EventEmitter from 'EventEmitter';
-import {OPERATIONS} from '../utils/operations';
+import EventEmitter from "EventEmitter";
+import { OPERATIONS } from "../utils/operations";
 
 export default class TelemetryCriterion extends EventEmitter {
-
   /**
    * Subscribes/Unsubscribes to telemetry and emits the result
    * of operations performed on the telemetry data returned and a given input
@@ -47,16 +46,19 @@ export default class TelemetryCriterion extends EventEmitter {
     this.result = undefined;
 
     this.initialize();
-    this.emitEvent('criterionUpdated', this);
+    this.emitEvent("criterionUpdated", this);
   }
 
   initialize() {
     this.telemetryObject = this.telemetryDomainObjectDefinition.telemetryObject;
     this.telemetryObjectIdAsString = this.openmct.objects.makeKeyString(
-        this.telemetryDomainObjectDefinition.telemetry);
+      this.telemetryDomainObjectDefinition.telemetry
+    );
   }
 
-  isValid() { return this.telemetryObject && this.metadata && this.operation; }
+  isValid() {
+    return this.telemetryObject && this.metadata && this.operation;
+  }
 
   updateTelemetry(telemetryObjects) {
     this.telemetryObject = telemetryObjects[this.telemetryObjectIdAsString];
@@ -64,16 +66,19 @@ export default class TelemetryCriterion extends EventEmitter {
 
   createNormalizedDatum(telemetryDatum, endpoint) {
     const id = this.openmct.objects.makeKeyString(endpoint.identifier);
-    const metadata =
-        this.openmct.telemetry.getMetadata(endpoint).valueMetadatas;
+    const metadata = this.openmct.telemetry.getMetadata(endpoint)
+      .valueMetadatas;
 
-    const normalizedDatum =
-        Object.values(metadata).reduce((datum, metadatum) => {
-          const formatter = this.openmct.telemetry.getValueFormatter(metadatum);
-          datum[metadatum.key] =
-              formatter.parse(telemetryDatum[metadatum.source]);
-          return datum;
-        }, {});
+    const normalizedDatum = Object.values(metadata).reduce(
+      (datum, metadatum) => {
+        const formatter = this.openmct.telemetry.getValueFormatter(metadatum);
+        datum[metadatum.key] = formatter.parse(
+          telemetryDatum[metadatum.source]
+        );
+        return datum;
+      },
+      {}
+    );
 
     normalizedDatum.id = id;
 
@@ -81,11 +86,12 @@ export default class TelemetryCriterion extends EventEmitter {
   }
 
   formatData(data) {
-    const datum = {result : this.computeResult(data)};
+    const datum = { result: this.computeResult(data) };
 
     if (data) {
-      this.openmct.time.getAllTimeSystems().forEach(
-          timeSystem => {datum[timeSystem.key] = data[timeSystem.key]});
+      this.openmct.time.getAllTimeSystems().forEach((timeSystem) => {
+        datum[timeSystem.key] = data[timeSystem.key];
+      });
     }
     return datum;
   }
@@ -96,20 +102,23 @@ export default class TelemetryCriterion extends EventEmitter {
   }
 
   requestLAD() {
-    const options = {strategy : 'latest', size : 1};
+    const options = { strategy: "latest", size: 1 };
 
     if (!this.isValid()) {
-      return {id : this.id, data : this.formatData({})};
+      return { id: this.id, data: this.formatData({}) };
     }
 
-    return this.openmct.telemetry.request(this.telemetryObject, options)
-        .then(results => {
-          const latestDatum = results.length ? results[results.length - 1] : {};
-          const normalizedDatum =
-              this.createNormalizedDatum(latestDatum, this.telemetryObject);
+    return this.openmct.telemetry
+      .request(this.telemetryObject, options)
+      .then((results) => {
+        const latestDatum = results.length ? results[results.length - 1] : {};
+        const normalizedDatum = this.createNormalizedDatum(
+          latestDatum,
+          this.telemetryObject
+        );
 
-          return {id : this.id, data : this.formatData(normalizedDatum)};
-        });
+        return { id: this.id, data: this.formatData(normalizedDatum) };
+      });
   }
 
   findOperation(operation) {
@@ -128,9 +137,9 @@ export default class TelemetryCriterion extends EventEmitter {
       let params = [];
       params.push(data[this.metadata]);
       if (this.input instanceof Array && this.input.length) {
-        this.input.forEach(input => params.push(input));
+        this.input.forEach((input) => params.push(input));
       }
-      if (typeof comparator === 'function') {
+      if (typeof comparator === "function") {
         result = !!comparator(params);
       }
     }
@@ -138,7 +147,7 @@ export default class TelemetryCriterion extends EventEmitter {
   }
 
   emitEvent(eventName, data) {
-    this.emit(eventName, {id : this.id, data : data});
+    this.emit(eventName, { id: this.id, data: data });
   }
 
   destroy() {

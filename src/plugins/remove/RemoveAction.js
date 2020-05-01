@@ -21,9 +21,9 @@
  *****************************************************************************/
 export default class RemoveAction {
   constructor(openmct) {
-    this.name = 'Remove';
-    this.key = 'remove';
-    this.description = 'Remove this object from its containing object.';
+    this.name = "Remove";
+    this.key = "remove";
+    this.description = "Remove this object from its containing object.";
     this.cssClass = "icon-trash";
 
     this.openmct = openmct;
@@ -33,72 +33,78 @@ export default class RemoveAction {
     let object = objectPath[0];
     let parent = objectPath[1];
     this.showConfirmDialog(object)
-        .then(() => {
-          this.removeFromComposition(parent, object);
-          if (this.inNavigationPath(object)) {
-            this.navigateTo(objectPath.slice(1));
-          }
-        })
-        .catch(() => {});
+      .then(() => {
+        this.removeFromComposition(parent, object);
+        if (this.inNavigationPath(object)) {
+          this.navigateTo(objectPath.slice(1));
+        }
+      })
+      .catch(() => {});
   }
 
   showConfirmDialog(object) {
-    return new Promise(
-        (resolve, reject) => {let dialog = this.openmct.overlays.dialog({
-          title : `Remove ${object.name}`,
-          iconClass : 'alert',
-          message :
-              'Warning! This action will remove this object. Are you sure you want to continue?',
-          buttons : [
-            {
-              label : 'OK',
-              callback : () => {
-                dialog.dismiss();
-                resolve();
-              }
+    return new Promise((resolve, reject) => {
+      let dialog = this.openmct.overlays.dialog({
+        title: `Remove ${object.name}`,
+        iconClass: "alert",
+        message:
+          "Warning! This action will remove this object. Are you sure you want to continue?",
+        buttons: [
+          {
+            label: "OK",
+            callback: () => {
+              dialog.dismiss();
+              resolve();
             },
-            {
-              label : 'Cancel',
-              callback : () => {
-                dialog.dismiss();
-                reject();
-              }
-            }
-          ]
-        })})
+          },
+          {
+            label: "Cancel",
+            callback: () => {
+              dialog.dismiss();
+              reject();
+            },
+          },
+        ],
+      });
+    });
   }
 
   inNavigationPath(object) {
-    return this.openmct.router.path.some(
-        objectInPath => this.openmct.objects.areIdsEqual(
-            objectInPath.identifier, object.identifier));
+    return this.openmct.router.path.some((objectInPath) =>
+      this.openmct.objects.areIdsEqual(
+        objectInPath.identifier,
+        object.identifier
+      )
+    );
   }
 
   navigateTo(objectPath) {
-    let urlPath = objectPath.reverse()
-                      .map(object => this.openmct.objects.makeKeyString(
-                               object.identifier))
-                      .join("/");
+    let urlPath = objectPath
+      .reverse()
+      .map((object) => this.openmct.objects.makeKeyString(object.identifier))
+      .join("/");
 
-    window.location.href = '#/browse/' + urlPath;
+    window.location.href = "#/browse/" + urlPath;
   }
 
   removeFromComposition(parent, child) {
     let composition = parent.composition.filter(
-        id => !this.openmct.objects.areIdsEqual(id, child.identifier));
+      (id) => !this.openmct.objects.areIdsEqual(id, child.identifier)
+    );
 
-    this.openmct.objects.mutate(parent, 'composition', composition);
+    this.openmct.objects.mutate(parent, "composition", composition);
 
     if (this.inNavigationPath(child) && this.openmct.editor.isEditing()) {
       this.openmct.editor.save();
     }
 
-    const parentKeyString =
-        this.openmct.objects.makeKeyString(parent.identifier);
+    const parentKeyString = this.openmct.objects.makeKeyString(
+      parent.identifier
+    );
     const isAlias = parentKeyString !== child.location;
 
     if (!isAlias) {
-      this.openmct.objects.mutate(child, 'location', null);
+      this.openmct.objects.mutate(child, "location", null);
     }
   }
 
@@ -106,7 +112,10 @@ export default class RemoveAction {
     let parent = objectPath[1];
     let parentType = parent && this.openmct.types.get(parent.type);
 
-    return parentType && parentType.definition.creatable &&
-           Array.isArray(parent.composition);
+    return (
+      parentType &&
+      parentType.definition.creatable &&
+      Array.isArray(parent.composition)
+    );
   }
 }

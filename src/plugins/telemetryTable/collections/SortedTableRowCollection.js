@@ -20,7 +20,7 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
+define(["lodash", "EventEmitter"], function (_, EventEmitter) {
   const LESS_THAN = -1;
   const EQUAL = 0;
   const GREATER_THAN = 1;
@@ -50,13 +50,13 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
 
         let rowsAdded = rows.filter(this.addOne, this);
         if (rowsAdded.length > 0) {
-          this.emit('add', rowsAdded);
+          this.emit("add", rowsAdded);
         }
         this.dupeCheck = true;
       } else {
         let wasAdded = this.addOne(rows);
         if (wasAdded) {
-          this.emit('add', rows);
+          this.emit("add", rows);
         }
       }
     }
@@ -66,7 +66,7 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
      */
     addOne(row) {
       if (this.sortOptions === undefined) {
-        throw 'Please specify sort options';
+        throw "Please specify sort options";
       }
 
       let isDuplicate = false;
@@ -86,7 +86,7 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
         let potentialDupes = this.rows.slice(startIx, endIx + 1);
         // Search potential dupes for exact dupe
         isDuplicate =
-            _.findIndex(potentialDupes, _.isEqual.bind(undefined, row)) > -1;
+          _.findIndex(potentialDupes, _.isEqual.bind(undefined, row)) > -1;
       }
 
       if (!isDuplicate) {
@@ -112,12 +112,13 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
 
       const testRowValue = this.getValueForSortColumn(testRow);
       const firstValue = this.getValueForSortColumn(this.rows[0]);
-      const lastValue =
-          this.getValueForSortColumn(this.rows[this.rows.length - 1]);
+      const lastValue = this.getValueForSortColumn(
+        this.rows[this.rows.length - 1]
+      );
 
       lodashFunction = lodashFunction || _.sortedIndex;
 
-      if (this.sortOptions.direction === 'asc') {
+      if (this.sortOptions.direction === "asc") {
         if (testRowValue > lastValue) {
           return this.rows.length;
         } else if (testRowValue === lastValue) {
@@ -126,9 +127,9 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
         } else if (testRowValue <= firstValue) {
           return 0;
         } else {
-          return lodashFunction(
-              rows, testRow,
-              (thisRow) => { return this.getValueForSortColumn(thisRow); });
+          return lodashFunction(rows, testRow, (thisRow) => {
+            return this.getValueForSortColumn(thisRow);
+          });
         }
       } else {
         if (testRowValue >= firstValue) {
@@ -197,10 +198,12 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
     sortBy(sortOptions) {
       if (arguments.length > 0) {
         this.sortOptions = sortOptions;
-        this.rows = _.sortByOrder(this.rows,
-                                  (row) => row.getParsedValue(sortOptions.key),
-                                  sortOptions.direction);
-        this.emit('sort');
+        this.rows = _.sortByOrder(
+          this.rows,
+          (row) => row.getParsedValue(sortOptions.key),
+          sortOptions.direction
+        );
+        this.emit("sort");
       }
       // Return duplicate to avoid direct modification of underlying object
       return Object.assign({}, this.sortOptions);
@@ -208,7 +211,7 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
 
     removeAllRowsForObject(objectKeyString) {
       let removed = [];
-      this.rows = this.rows.filter(row => {
+      this.rows = this.rows.filter((row) => {
         if (row.objectKeyString === objectKeyString) {
           removed.push(row);
           return false;
@@ -216,7 +219,7 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
         return true;
       });
 
-      this.emit('remove', removed);
+      this.emit("remove", removed);
     }
 
     getValueForSortColumn(row) {
@@ -224,19 +227,22 @@ define([ 'lodash', 'EventEmitter' ], function(_, EventEmitter) {
     }
 
     remove(removedRows) {
-      this.rows =
-          this.rows.filter(row => { return removedRows.indexOf(row) === -1; });
+      this.rows = this.rows.filter((row) => {
+        return removedRows.indexOf(row) === -1;
+      });
 
-      this.emit('remove', removedRows);
+      this.emit("remove", removedRows);
     }
 
-    getRows() { return this.rows; }
+    getRows() {
+      return this.rows;
+    }
 
     clear() {
       let removedRows = this.rows;
       this.rows = [];
 
-      this.emit('remove', removedRows);
+      this.emit("remove", removedRows);
     }
   }
   return SortedTableRowCollection;

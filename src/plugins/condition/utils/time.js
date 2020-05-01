@@ -20,28 +20,33 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-export const getLatestTimestamp =
-    (currentTimestamp, compareTimestamp, timeSystems, currentTimeSystem) => {
-      let latest = {...currentTimestamp};
-      const compare = {...compareTimestamp};
-      const key = currentTimeSystem.key;
+export const getLatestTimestamp = (
+  currentTimestamp,
+  compareTimestamp,
+  timeSystems,
+  currentTimeSystem
+) => {
+  let latest = { ...currentTimestamp };
+  const compare = { ...compareTimestamp };
+  const key = currentTimeSystem.key;
 
-      if (!latest || !latest[key]) {
-        latest = updateLatestTimeStamp(compare, timeSystems)
-      }
+  if (!latest || !latest[key]) {
+    latest = updateLatestTimeStamp(compare, timeSystems);
+  }
 
-      if (compare[key] > latest[key]) {
-        latest = updateLatestTimeStamp(compare, timeSystems)
-      }
+  if (compare[key] > latest[key]) {
+    latest = updateLatestTimeStamp(compare, timeSystems);
+  }
 
-      return latest;
-    }
+  return latest;
+};
 
 function updateLatestTimeStamp(timestamp, timeSystems) {
   let latest = {};
 
-  timeSystems.forEach(
-      timeSystem => { latest[timeSystem.key] = timestamp[timeSystem.key]; });
+  timeSystems.forEach((timeSystem) => {
+    latest[timeSystem.key] = timestamp[timeSystem.key];
+  });
 
   return latest;
 }

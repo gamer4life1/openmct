@@ -21,18 +21,19 @@
  *****************************************************************************/
 
 import StyleRuleManager from "@/plugins/condition/StyleRuleManager";
-import {getStylesWithoutNoneValue} from "@/plugins/condition/utils/styleUtils";
+import { getStylesWithoutNoneValue } from "@/plugins/condition/utils/styleUtils";
 
 export default {
-  inject: [ 'openmct' ],
+  inject: ["openmct"],
   data() {
-    return { itemStyle: undefined, styleClass: '' }
+    return { itemStyle: undefined, styleClass: "" };
   },
   mounted() {
     this.parentDomainObject = this.$parent.domainObject;
     this.itemId = this.item.id;
     this.objectStyle = this.getObjectStyleForItem(
-        this.parentDomainObject.configuration.objectStyles);
+      this.parentDomainObject.configuration.objectStyles
+    );
     this.initObjectStyles();
   },
   destroyed() {
@@ -44,8 +45,8 @@ export default {
     getObjectStyleForItem(objectStyle) {
       if (objectStyle) {
         return objectStyle[this.itemId]
-                   ? Object.assign({}, objectStyle[this.itemId])
-                   : undefined;
+          ? Object.assign({}, objectStyle[this.itemId])
+          : undefined;
       } else {
         return undefined;
       }
@@ -53,7 +54,11 @@ export default {
     initObjectStyles() {
       if (!this.styleRuleManager) {
         this.styleRuleManager = new StyleRuleManager(
-            this.objectStyle, this.openmct, this.updateStyle.bind(this), true);
+          this.objectStyle,
+          this.openmct,
+          this.updateStyle.bind(this),
+          true
+        );
       } else {
         this.styleRuleManager.updateObjectStyleConfig(this.objectStyle);
       }
@@ -63,20 +68,22 @@ export default {
       }
 
       this.stopListeningObjectStyles = this.openmct.objects.observe(
-          this.parentDomainObject, 'configuration.objectStyles',
-          (newObjectStyle) => {
-            // Updating object styles in the inspector view will trigger this so
-            // that the changes are reflected immediately
-            let newItemObjectStyle = this.getObjectStyleForItem(newObjectStyle);
-            if (this.objectStyle !== newItemObjectStyle) {
-              this.objectStyle = newItemObjectStyle;
-              this.styleRuleManager.updateObjectStyleConfig(this.objectStyle);
-            }
-          });
+        this.parentDomainObject,
+        "configuration.objectStyles",
+        (newObjectStyle) => {
+          // Updating object styles in the inspector view will trigger this so
+          // that the changes are reflected immediately
+          let newItemObjectStyle = this.getObjectStyleForItem(newObjectStyle);
+          if (this.objectStyle !== newItemObjectStyle) {
+            this.objectStyle = newItemObjectStyle;
+            this.styleRuleManager.updateObjectStyleConfig(this.objectStyle);
+          }
+        }
+      );
     },
     updateStyle(style) {
       this.itemStyle = getStylesWithoutNoneValue(style);
       this.styleClass = this.itemStyle && this.itemStyle.isStyleInvisible;
-    }
-  }
+    },
+  },
 };

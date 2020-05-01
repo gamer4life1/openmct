@@ -20,25 +20,25 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define([], function() {
+define([], function () {
   // Set of connection states; changing among these states will be
   // reflected in the indicator's appearance.
   // CONNECTED: Everything nominal, expect to be able to read/write.
   // DISCONNECTED: HTTP failed; maybe misconfigured, disconnected.
   // PENDING: Still trying to connect, and haven't failed yet.
   var CONNECTED = {
-    text : "Connected",
-    glyphClass : "ok",
-    statusClass : "s-status-on",
-    description : "Connected to the domain object database."
-  },
-      DISCONNECTED = {
-        text : "Disconnected",
-        glyphClass : "err",
-        statusClass : "s-status-caution",
-        description : "Unable to connect to the domain object database."
-      },
-      PENDING = {text : "Checking connection..."};
+      text: "Connected",
+      glyphClass: "ok",
+      statusClass: "s-status-on",
+      description: "Connected to the domain object database.",
+    },
+    DISCONNECTED = {
+      text: "Disconnected",
+      glyphClass: "err",
+      statusClass: "s-status-caution",
+      description: "Unable to connect to the domain object database.",
+    },
+    PENDING = { text: "Checking connection..." };
 
   /**
    * Indicator for the current ElasticSearch connection. Polls
@@ -59,10 +59,14 @@ define([], function() {
     this.state = PENDING;
 
     // Callback if the HTTP request to ElasticSearch fails
-    function handleError() { self.state = DISCONNECTED; }
+    function handleError() {
+      self.state = DISCONNECTED;
+    }
 
     // Callback if the HTTP request succeeds.
-    function handleResponse() { self.state = CONNECTED; }
+    function handleResponse() {
+      self.state = CONNECTED;
+    }
 
     // Try to connect to ElasticSearch, and update the indicator.
     function updateIndicator() {
@@ -74,13 +78,18 @@ define([], function() {
     $interval(updateIndicator, interval, 0, false);
   }
 
-  ElasticIndicator.prototype.getCssClass =
-      function() { return "c-indicator--clickable icon-suitcase"; };
-  ElasticIndicator.prototype.getGlyphClass =
-      function() { return this.state.glyphClass; };
-  ElasticIndicator.prototype.getText = function() { return this.state.text; };
-  ElasticIndicator.prototype.getDescription =
-      function() { return this.state.description; };
+  ElasticIndicator.prototype.getCssClass = function () {
+    return "c-indicator--clickable icon-suitcase";
+  };
+  ElasticIndicator.prototype.getGlyphClass = function () {
+    return this.state.glyphClass;
+  };
+  ElasticIndicator.prototype.getText = function () {
+    return this.state.text;
+  };
+  ElasticIndicator.prototype.getDescription = function () {
+    return this.state.description;
+  };
 
   return ElasticIndicator;
 });

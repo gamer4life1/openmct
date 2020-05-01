@@ -20,7 +20,7 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import ConditionManager from './ConditionManager'
+import ConditionManager from "./ConditionManager";
 
 export default class ConditionSetTelemetryProvider {
   constructor(openmct) {
@@ -29,29 +29,36 @@ export default class ConditionSetTelemetryProvider {
   }
 
   isTelemetryObject(domainObject) {
-    return domainObject.type === 'conditionSet';
+    return domainObject.type === "conditionSet";
   }
 
-  supportsRequest(domainObject) { return domainObject.type === 'conditionSet'; }
+  supportsRequest(domainObject) {
+    return domainObject.type === "conditionSet";
+  }
 
   supportsSubscribe(domainObject) {
-    return domainObject.type === 'conditionSet';
+    return domainObject.type === "conditionSet";
   }
 
   request(domainObject) {
     let conditionManager = this.getConditionManager(domainObject);
 
-    return conditionManager.requestLADConditionSetOutput().then(
-        latestOutput => { return latestOutput; });
+    return conditionManager
+      .requestLADConditionSetOutput()
+      .then((latestOutput) => {
+        return latestOutput;
+      });
   }
 
   subscribe(domainObject, callback) {
     let conditionManager = this.getConditionManager(domainObject);
 
-    conditionManager.on('conditionSetResultUpdated', callback);
+    conditionManager.on("conditionSetResultUpdated", callback);
 
     return this.destroyConditionManager.bind(
-        this, this.openmct.objects.makeKeyString(domainObject.identifier));
+      this,
+      this.openmct.objects.makeKeyString(domainObject.identifier)
+    );
   }
 
   /**
@@ -63,8 +70,10 @@ export default class ConditionSetTelemetryProvider {
     const id = this.openmct.objects.makeKeyString(domainObject.identifier);
 
     if (!this.conditionManagerPool[id]) {
-      this.conditionManagerPool[id] =
-          new ConditionManager(domainObject, this.openmct);
+      this.conditionManagerPool[id] = new ConditionManager(
+        domainObject,
+        this.openmct
+      );
     }
 
     return this.conditionManagerPool[id];
@@ -77,7 +86,7 @@ export default class ConditionSetTelemetryProvider {
    */
   destroyConditionManager(id) {
     if (this.conditionManagerPool[id]) {
-      this.conditionManagerPool[id].off('conditionSetResultUpdated');
+      this.conditionManagerPool[id].off("conditionSetResultUpdated");
       this.conditionManagerPool[id].destroy();
       delete this.conditionManagerPool[id];
     }

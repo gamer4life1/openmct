@@ -20,38 +20,42 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-import Vue from 'vue';
+import Vue from "vue";
 
-import ConditionWidgetComponent from './components/ConditionWidget.vue';
+import ConditionWidgetComponent from "./components/ConditionWidget.vue";
 
 export default function ConditionWidget(openmct) {
   return {
-    key : 'conditionWidget',
-    name : 'Condition Widget',
-    cssClass : 'icon-condition-widget',
-    canView : function(
-        domainObject) { return domainObject.type === 'conditionWidget'; },
-    canEdit : function(
-        domainObject) { return domainObject.type === 'conditionWidget'; },
-    view : function(domainObject) {
+    key: "conditionWidget",
+    name: "Condition Widget",
+    cssClass: "icon-condition-widget",
+    canView: function (domainObject) {
+      return domainObject.type === "conditionWidget";
+    },
+    canEdit: function (domainObject) {
+      return domainObject.type === "conditionWidget";
+    },
+    view: function (domainObject) {
       let component;
 
       return {
-        show : function(element) {
+        show: function (element) {
           component = new Vue({
-            el : element,
-            components : {ConditionWidgetComponent : ConditionWidgetComponent},
-            provide : {openmct, domainObject},
-            template :
-                '<condition-widget-component></condition-widget-component>'
+            el: element,
+            components: { ConditionWidgetComponent: ConditionWidgetComponent },
+            provide: { openmct, domainObject },
+            template:
+              "<condition-widget-component></condition-widget-component>",
           });
         },
-        destroy : function(element) {
+        destroy: function (element) {
           component.$destroy();
           component = undefined;
-        }
+        },
       };
     },
-    priority : function() { return 1; }
+    priority: function () {
+      return 1;
+    },
   };
 }

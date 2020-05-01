@@ -20,16 +20,18 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
-  var e10 = Math.sqrt(50), e5 = Math.sqrt(10), e2 = Math.sqrt(2);
+define(["lodash", "../lib/eventHelpers"], function (_, eventHelpers) {
+  var e10 = Math.sqrt(50),
+    e5 = Math.sqrt(10),
+    e2 = Math.sqrt(2);
 
   /**
    * Nicely formatted tick steps from d3-array.
    */
   function tickStep(start, stop, count) {
     var step0 = Math.abs(stop - start) / Math.max(0, count),
-        step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
-        error = step0 / step1;
+      step1 = Math.pow(10, Math.floor(Math.log(step0) / Math.LN10)),
+      error = step0 / step1;
     if (error >= e10) {
       step1 *= 10;
     } else if (error >= e5) {
@@ -45,12 +47,13 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
    * ticks to precise values.
    */
   function getPrecision(step) {
-    var exponential = step.toExponential(), i = exponential.indexOf('e');
+    var exponential = step.toExponential(),
+      i = exponential.indexOf("e");
     if (i === -1) {
       return 0;
     }
 
-    var precision = Math.max(0, -(+exponential.slice(i + 1)));
+    var precision = Math.max(0, -+exponential.slice(i + 1));
 
     if (precision > 20) {
       precision = 20;
@@ -63,12 +66,15 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
    * Linear tick generation from d3-array.
    */
   function ticks(start, stop, count) {
-    var step = tickStep(start, stop, count), precision = getPrecision(step);
-    return _
-        .range(Math.ceil(start / step) * step,
-               Math.floor(stop / step) * step + step / 2, // inclusive
-               step)
-        .map(function round(tick) { return +tick.toFixed(precision); });
+    var step = tickStep(start, stop, count),
+      precision = getPrecision(step);
+    return _.range(
+      Math.ceil(start / step) * step,
+      Math.floor(stop / step) * step + step / 2, // inclusive
+      step
+    ).map(function round(tick) {
+      return +tick.toFixed(precision);
+    });
   }
 
   function commonPrefix(a, b) {
@@ -78,7 +84,7 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
       if (a[i] !== b[i]) {
         break;
       }
-      if (a[i] === ' ') {
+      if (a[i] === " ") {
         breakpoint = i + 1;
       }
     }
@@ -92,7 +98,7 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
       if (a[a.length - i] !== b[b.length - i]) {
         break;
       }
-      if ('. '.indexOf(a[a.length - i]) !== -1) {
+      if (". ".indexOf(a[a.length - i]) !== -1) {
         breakpoint = i;
       }
     }
@@ -106,14 +112,14 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
 
       this.tickCount = 4;
       this.tickUpdate = false;
-      this.listenTo(this.axis, 'change:displayRange', this.updateTicks, this);
-      this.listenTo(this.axis, 'change:format', this.updateTicks, this);
-      this.listenTo(this.$scope, '$destroy', this.stopListening, this);
+      this.listenTo(this.axis, "change:displayRange", this.updateTicks, this);
+      this.listenTo(this.axis, "change:format", this.updateTicks, this);
+      this.listenTo(this.$scope, "$destroy", this.stopListening, this);
       this.updateTicks();
-    }
+    };
   }
 
-  MCTTicksController.$inject = [ '$scope', '$element' ];
+  MCTTicksController.$inject = ["$scope", "$element"];
 
   eventHelpers.extend(MCTTicksController.prototype);
 
@@ -124,7 +130,7 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
    * range by more than one tick step.
    * @private
    */
-  MCTTicksController.prototype.shouldRegenerateTicks = function(range) {
+  MCTTicksController.prototype.shouldRegenerateTicks = function (range) {
     if (!this.tickRange || !this.$scope.ticks || !this.$scope.ticks.length) {
       return true;
     }
@@ -140,20 +146,20 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
     return false;
   };
 
-  MCTTicksController.prototype.getTicks = function() {
+  MCTTicksController.prototype.getTicks = function () {
     var number = this.tickCount;
-    var clampRange = this.axis.get('values');
-    var range = this.axis.get('displayRange');
+    var clampRange = this.axis.get("values");
+    var range = this.axis.get("displayRange");
     if (clampRange) {
-      return clampRange.filter(
-          function(value) { return value <= range.max && value >= range.min; },
-          this);
+      return clampRange.filter(function (value) {
+        return value <= range.max && value >= range.min;
+      }, this);
     }
     return ticks(range.min, range.max, number);
   };
 
-  MCTTicksController.prototype.updateTicks = function() {
-    var range = this.axis.get('displayRange');
+  MCTTicksController.prototype.updateTicks = function () {
+    var range = this.axis.get("displayRange");
     if (!range) {
       delete this.$scope.min;
       delete this.$scope.max;
@@ -163,7 +169,7 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
       delete this.shouldCheckWidth;
       return;
     }
-    var format = this.axis.get('format');
+    var format = this.axis.get("format");
     if (!format) {
       return;
     }
@@ -173,20 +179,22 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
     if (this.shouldRegenerateTicks(range)) {
       var newTicks = this.getTicks();
       this.tickRange = {
-        min : Math.min.apply(Math, newTicks),
-        max : Math.max.apply(Math, newTicks),
-        step : newTicks[1] - newTicks[0]
+        min: Math.min.apply(Math, newTicks),
+        max: Math.max.apply(Math, newTicks),
+        step: newTicks[1] - newTicks[0],
       };
 
-      newTicks = newTicks.map(function(tickValue) {
-        return {value : tickValue, text : format(tickValue)};
+      newTicks = newTicks.map(function (tickValue) {
+        return { value: tickValue, text: format(tickValue) };
       }, this);
 
-      if (newTicks.length && typeof newTicks[0].text === 'string') {
-        var tickText = newTicks.map(function(t) { return t.text; });
+      if (newTicks.length && typeof newTicks[0].text === "string") {
+        var tickText = newTicks.map(function (t) {
+          return t.text;
+        });
         var prefix = tickText.reduce(commonPrefix);
         var suffix = tickText.reduce(commonSuffix);
-        newTicks.forEach(function(t, i) {
+        newTicks.forEach(function (t, i) {
           t.fullText = t.text;
           if (suffix.length) {
             t.text = t.text.slice(prefix.length, -suffix.length);
@@ -201,7 +209,7 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
     this.scheduleTickUpdate();
   };
 
-  MCTTicksController.prototype.scheduleTickUpdate = function() {
+  MCTTicksController.prototype.scheduleTickUpdate = function () {
     if (this.tickUpdate) {
       return;
     }
@@ -209,19 +217,23 @@ define([ 'lodash', '../lib/eventHelpers' ], function(_, eventHelpers) {
     setTimeout(this.doTickUpdate.bind(this), 0);
   };
 
-  MCTTicksController.prototype.doTickUpdate = function() {
+  MCTTicksController.prototype.doTickUpdate = function () {
     if (this.shouldCheckWidth) {
       this.$scope.$digest();
       var element = this.$element[0],
-          tickElements = element.querySelectorAll('.gl-plot-tick > span'),
-          tickWidth = Number([].reduce.call(
-              tickElements,
-              function(memo,
-                       first) { return Math.max(memo, first.offsetWidth); },
-              0));
+        tickElements = element.querySelectorAll(".gl-plot-tick > span"),
+        tickWidth = Number(
+          [].reduce.call(
+            tickElements,
+            function (memo, first) {
+              return Math.max(memo, first.offsetWidth);
+            },
+            0
+          )
+        );
 
       this.$scope.tickWidth = tickWidth;
-      this.$scope.$emit('plot:tickWidth', tickWidth);
+      this.$scope.$emit("plot:tickWidth", tickWidth);
       this.shouldCheckWidth = false;
     }
     this.$scope.$digest();

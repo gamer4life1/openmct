@@ -23,7 +23,7 @@
 /**
  * Module defining ExportImageService. Created by hudsonfoo on 09/02/16
  */
-define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
+define(["html2canvas", "saveAs"], function (html2canvas, { saveAs }) {
   /**
    * The export image service will export any HTML node to
    * JPG, or PNG.
@@ -42,16 +42,19 @@ define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
    * @param {string} type of image to convert the element to.
    * @returns {promise}
    */
-  ExportImageService.prototype.renderElement = function(element, imageType,
-                                                        className) {
+  ExportImageService.prototype.renderElement = function (
+    element,
+    imageType,
+    className
+  ) {
     var dialogService = this.dialogService,
-        dialog = dialogService.showBlockingMessage({
-          title : "Capturing...",
-          hint : "Capturing an image",
-          unknownProgress : true,
-          severity : "info",
-          delay : true
-        });
+      dialog = dialogService.showBlockingMessage({
+        title: "Capturing...",
+        hint: "Capturing an image",
+        unknownProgress: true,
+        severity: "info",
+        delay: true,
+      });
 
     var mimeType = "image/png";
     if (imageType === "jpg") {
@@ -59,43 +62,46 @@ define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
     }
 
     if (className) {
-      var exportId = 'export-element-' + this.exportCount;
+      var exportId = "export-element-" + this.exportCount;
       this.exportCount++;
       var oldId = element.id;
       element.id = exportId;
     }
 
     return html2canvas(element, {
-             onclone : function(document) {
-               if (className) {
-                 var clonedElement = document.getElementById(exportId);
-                 clonedElement.classList.add(className);
-               }
-               element.id = oldId;
-             },
-             removeContainer :
-                 true // Set to false to debug what html2canvas renders
-           })
-        .then(
-            function(canvas) {
-              dialog.dismiss();
-              return new Promise(function(
-                  resolve,
-                  reject) { return canvas.toBlob(resolve, mimeType); });
+      onclone: function (document) {
+        if (className) {
+          var clonedElement = document.getElementById(exportId);
+          clonedElement.classList.add(className);
+        }
+        element.id = oldId;
+      },
+      removeContainer: true, // Set to false to debug what html2canvas renders
+    }).then(
+      function (canvas) {
+        dialog.dismiss();
+        return new Promise(function (resolve, reject) {
+          return canvas.toBlob(resolve, mimeType);
+        });
+      },
+      function (error) {
+        console.log("error capturing image", error);
+        dialog.dismiss();
+        var errorDialog = dialogService.showBlockingMessage({
+          title: "Error capturing image",
+          severity: "error",
+          hint: "Image was not captured successfully!",
+          options: [
+            {
+              label: "OK",
+              callback: function () {
+                errorDialog.dismiss();
+              },
             },
-            function(error) {
-              console.log('error capturing image', error);
-              dialog.dismiss();
-              var errorDialog = dialogService.showBlockingMessage({
-                title : "Error capturing image",
-                severity : "error",
-                hint : "Image was not captured successfully!",
-                options : [ {
-                  label : "OK",
-                  callback : function() { errorDialog.dismiss(); }
-                } ]
-              });
-            });
+          ],
+        });
+      }
+    );
   };
 
   /**
@@ -106,10 +112,14 @@ define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
    *     (optional)
    * @returns {promise}
    */
-  ExportImageService.prototype.exportJPG = function(element, filename,
-                                                    className) {
-    return this.renderElement(element, "jpg", className)
-        .then(function(img) { saveAs(img, filename); });
+  ExportImageService.prototype.exportJPG = function (
+    element,
+    filename,
+    className
+  ) {
+    return this.renderElement(element, "jpg", className).then(function (img) {
+      saveAs(img, filename);
+    });
   };
 
   /**
@@ -120,10 +130,14 @@ define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
    *     (optional)
    * @returns {promise}
    */
-  ExportImageService.prototype.exportPNG = function(element, filename,
-                                                    className) {
-    return this.renderElement(element, "png", className)
-        .then(function(img) { saveAs(img, filename); });
+  ExportImageService.prototype.exportPNG = function (
+    element,
+    filename,
+    className
+  ) {
+    return this.renderElement(element, "png", className).then(function (img) {
+      saveAs(img, filename);
+    });
   };
 
   /**
@@ -133,9 +147,9 @@ define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
    * @returns {promise}
    */
 
-  ExportImageService.prototype.exportPNGtoSRC = function(
-      element,
-      className) { return this.renderElement(element, "png", className); };
+  ExportImageService.prototype.exportPNGtoSRC = function (element, className) {
+    return this.renderElement(element, "png", className);
+  };
 
   /**
    * canvas.toBlob() not supported in IE < 10, Opera, and Safari. This polyfill
@@ -145,16 +159,17 @@ define([ "html2canvas", "saveAs" ], function(html2canvas, {saveAs}) {
   function polyfillToBlob() {
     if (!HTMLCanvasElement.prototype.toBlob) {
       Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
-        value : function(callback, mimeType, quality) {
-          var binStr = atob(this.toDataURL(mimeType, quality).split(',')[1]),
-              len = binStr.length, arr = new Uint8Array(len);
+        value: function (callback, mimeType, quality) {
+          var binStr = atob(this.toDataURL(mimeType, quality).split(",")[1]),
+            len = binStr.length,
+            arr = new Uint8Array(len);
 
           for (var i = 0; i < len; i++) {
             arr[i] = binStr.charCodeAt(i);
           }
 
-          callback(new Blob([ arr ], {type : mimeType || "image/png"}));
-        }
+          callback(new Blob([arr], { type: mimeType || "image/png" }));
+        },
       });
     }
   }

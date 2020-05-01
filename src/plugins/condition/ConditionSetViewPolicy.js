@@ -22,12 +22,11 @@
 
 function ConditionSetViewPolicy() {}
 
-ConditionSetViewPolicy.prototype.allow =
-    function(view, domainObject) {
-  if (domainObject.getModel().type === 'conditionSet') {
-    return view.key === 'conditionSet.view';
+ConditionSetViewPolicy.prototype.allow = function (view, domainObject) {
+  if (domainObject.getModel().type === "conditionSet") {
+    return view.key === "conditionSet.view";
   }
   return true;
-}
+};
 
 export default ConditionSetViewPolicy;
