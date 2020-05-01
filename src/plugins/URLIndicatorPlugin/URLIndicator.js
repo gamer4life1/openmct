@@ -20,88 +20,93 @@
  * at runtime from the About dialog for additional information.
  *****************************************************************************/
 
-define(
-    ['zepto'],
-    function ($) {
+define(["zepto"], function ($) {
+  // Set of connection states; changing among these states will be
+  // reflected in the indicator's appearance.
+  // CONNECTED: Everything nominal, expect to be able to read/write.
+  // DISCONNECTED: HTTP failed; maybe misconfigured, disconnected.
+  // PENDING: Still trying to connect, and haven't failed yet.
+  var CONNECTED = { statusClass: "s-status-on" },
+    PENDING = { statusClass: "s-status-warning-lo" },
+    DISCONNECTED = { statusClass: "s-status-warning-hi" };
+  function URLIndicator(options, simpleIndicator) {
+    this.bindMethods();
+    this.count = 0;
 
-        // Set of connection states; changing among these states will be
-        // reflected in the indicator's appearance.
-        // CONNECTED: Everything nominal, expect to be able to read/write.
-        // DISCONNECTED: HTTP failed; maybe misconfigured, disconnected.
-        // PENDING: Still trying to connect, and haven't failed yet.
-        var CONNECTED = {
-                statusClass: "s-status-ok"
-            },
-            PENDING = {
-                statusClass: "s-status-warning-lo"
-            },
-            DISCONNECTED = {
-                statusClass: "s-status-warning-hi"
-            };
-        function URLIndicator(options, simpleIndicator) {
-            this.bindMethods();
-            this.count = 0;
+    this.indicator = simpleIndicator;
+    this.setDefaultsFromOptions(options);
+    this.setIndicatorToState(PENDING);
 
-            this.indicator = simpleIndicator;
-            this.setDefaultsFromOptions(options);
-            this.setIndicatorToState(PENDING);
+    this.fetchUrl();
+    setInterval(this.fetchUrl, this.interval);
+  }
 
-            this.fetchUrl();
-            setInterval(this.fetchUrl, this.interval);
-        }
+  URLIndicator.prototype.setIndicatorToState = function (state) {
+    switch (state) {
+      case CONNECTED: {
+        this.indicator.text(this.label + " is connected");
+        this.indicator.description(
+          this.label +
+            " is online, checking status every " +
+            this.interval +
+            " milliseconds."
+        );
+        break;
+      }
+      case PENDING: {
+        this.indicator.text(
+          "Checking status of " + this.label + " please stand by..."
+        );
+        this.indicator.description(
+          "Checking status of " + this.label + " please stand by..."
+        );
+        break;
+      }
+      case DISCONNECTED: {
+        this.indicator.text(this.label + " is offline");
+        this.indicator.description(
+          this.label +
+            " is offline, checking status every " +
+            this.interval +
+            " milliseconds"
+        );
+        break;
+      }
+    }
 
-        URLIndicator.prototype.setIndicatorToState = function (state) {
-            switch (state) {
-            case CONNECTED: {
-                this.indicator.text(this.label + " is connected");
-                this.indicator.description(this.label + " is online, checking status every " + this.interval + " milliseconds.");
-                break;
-            }
-            case PENDING: {
-                this.indicator.text("Checking status of " + this.label + " please stand by...");
-                this.indicator.description("Checking status of " + this.label + " please stand by...");
-                break;
-            }
-            case DISCONNECTED: {
-                this.indicator.text(this.label + " is offline");
-                this.indicator.description(this.label + " is offline, checking status every " + this.interval + " milliseconds");
-                break;
-            }
-            }
+    this.indicator.statusClass(state.statusClass);
+  };
 
-            this.indicator.statusClass(state.statusClass);
-        };
-
-        URLIndicator.prototype.fetchUrl = function () {
-            $.ajax({
-                type: 'GET',
-                url: this.URLpath,
-                success: this.handleSuccess,
-                error: this.handleError
-            });
-        };
-
-        URLIndicator.prototype.handleError = function (e) {
-            this.setIndicatorToState(DISCONNECTED);
-        };
-
-        URLIndicator.prototype.handleSuccess = function () {
-            this.setIndicatorToState(CONNECTED);
-        };
-
-        URLIndicator.prototype.setDefaultsFromOptions = function (options) {
-            this.URLpath = options.url;
-            this.label = options.label || options.url;
-            this.interval = options.interval || 10000;
-            this.indicator.iconClass(options.iconClass || 'icon-chain-links');
-        };
-
-        URLIndicator.prototype.bindMethods = function () {
-            this.fetchUrl = this.fetchUrl.bind(this);
-            this.handleSuccess = this.handleSuccess.bind(this);
-            this.handleError = this.handleError.bind(this);
-            this.setIndicatorToState = this.setIndicatorToState.bind(this);
-        };
-
-        return URLIndicator;
+  URLIndicator.prototype.fetchUrl = function () {
+    $.ajax({
+      type: "GET",
+      url: this.URLpath,
+      success: this.handleSuccess,
+      error: this.handleError,
     });
+  };
+
+  URLIndicator.prototype.handleError = function (e) {
+    this.setIndicatorToState(DISCONNECTED);
+  };
+
+  URLIndicator.prototype.handleSuccess = function () {
+    this.setIndicatorToState(CONNECTED);
+  };
+
+  URLIndicator.prototype.setDefaultsFromOptions = function (options) {
+    this.URLpath = options.url;
+    this.label = options.label || options.url;
+    this.interval = options.interval || 10000;
+    this.indicator.iconClass(options.iconClass || "icon-chain-links");
+  };
+
+  URLIndicator.prototype.bindMethods = function () {
+    this.fetchUrl = this.fetchUrl.bind(this);
+    this.handleSuccess = this.handleSuccess.bind(this);
+    this.handleError = this.handleError.bind(this);
+    this.setIndicatorToState = this.setIndicatorToState.bind(this);
+  };
+
+  return URLIndicator;
+});

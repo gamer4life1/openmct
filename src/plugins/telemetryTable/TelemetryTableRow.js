@@ -21,72 +21,84 @@
  *****************************************************************************/
 
 define([], function () {
-    class TelemetryTableRow {
-        constructor(datum, columns, objectKeyString, limitEvaluator) {
-            this.columns = columns;
+  class TelemetryTableRow {
+    constructor(datum, columns, objectKeyString, limitEvaluator) {
+      this.columns = columns;
 
-            this.datum = createNormalizedDatum(datum, columns);
-            this.limitEvaluator = limitEvaluator;
-            this.objectKeyString = objectKeyString;
-        }
-
-        getFormattedDatum(headers) {
-            return Object.keys(headers).reduce((formattedDatum, columnKey) => {
-                formattedDatum[columnKey] = this.getFormattedValue(columnKey);
-                return formattedDatum;
-            }, {});
-        }
-
-        getFormattedValue(key) {
-            let column = this.columns[key];
-            return column && column.getFormattedValue(this.datum[key]);
-        }
-
-        getCellComponentName(key) {
-            let column = this.columns[key];
-            return column &&
-                column.getCellComponentName &&
-                column.getCellComponentName();
-        }
-
-        getRowClass() {
-            if (!this.rowClass) {
-                let limitEvaluation = this.limitEvaluator.evaluate(this.datum);
-                this.rowClass = limitEvaluation && limitEvaluation.cssClass;
-            }
-            return this.rowClass;
-        }
-
-        getCellLimitClasses() {
-            if (!this.cellLimitClasses) {
-                this.cellLimitClasses = Object.values(this.columns).reduce((alarmStateMap, column) => {
-                    let limitEvaluation = this.limitEvaluator.evaluate(this.datum, column.getMetadatum());
-                    alarmStateMap[column.getKey()] = limitEvaluation && limitEvaluation.cssClass;
-
-                    return alarmStateMap;
-                }, {});
-            }
-            return this.cellLimitClasses;
-        }
-
-        getContextMenuActions() {
-            return [];
-        }
+      this.datum = createNormalizedDatum(datum, columns);
+      this.limitEvaluator = limitEvaluator;
+      this.objectKeyString = objectKeyString;
     }
 
-    /**
-     * Normalize the structure of datums to assist sorting and merging of columns.
-     * Maps all sources to keys.
-     * @private
-     * @param {*} telemetryDatum
-     * @param {*} metadataValues
-     */
-    function createNormalizedDatum(datum, columns) {
-        return Object.values(columns).reduce((normalizedDatum, column) => {
-            normalizedDatum[column.getKey()] = column.getRawValue(datum);
-            return normalizedDatum;
-        }, {});
+    getFormattedDatum(headers) {
+      return Object.keys(headers).reduce((formattedDatum, columnKey) => {
+        formattedDatum[columnKey] = this.getFormattedValue(columnKey);
+        return formattedDatum;
+      }, {});
     }
 
-    return TelemetryTableRow;
+    getFormattedValue(key) {
+      let column = this.columns[key];
+      return column && column.getFormattedValue(this.datum[key]);
+    }
+
+    getParsedValue(key) {
+      let column = this.columns[key];
+      return column && column.getParsedValue(this.datum[key]);
+    }
+
+    getCellComponentName(key) {
+      let column = this.columns[key];
+      return (
+        column && column.getCellComponentName && column.getCellComponentName()
+      );
+    }
+
+    getRowClass() {
+      if (!this.rowClass) {
+        let limitEvaluation = this.limitEvaluator.evaluate(this.datum);
+        this.rowClass = limitEvaluation && limitEvaluation.cssClass;
+      }
+      return this.rowClass;
+    }
+
+    getCellLimitClasses() {
+      if (!this.cellLimitClasses) {
+        this.cellLimitClasses = Object.values(this.columns).reduce(
+          (alarmStateMap, column) => {
+            let limitEvaluation = this.limitEvaluator.evaluate(
+              this.datum,
+              column.getMetadatum()
+            );
+            alarmStateMap[column.getKey()] =
+              limitEvaluation && limitEvaluation.cssClass;
+
+            return alarmStateMap;
+          },
+          {}
+        );
+      }
+      return this.cellLimitClasses;
+    }
+
+    getContextMenuActions() {
+      return [];
+    }
+  }
+
+  /**
+   * Normalize the structure of datums to assist sorting and merging of columns.
+   * Maps all sources to keys.
+   * @private
+   * @param {*} telemetryDatum
+   * @param {*} metadataValues
+   */
+  function createNormalizedDatum(datum, columns) {
+    return Object.values(columns).reduce((normalizedDatum, column) => {
+      normalizedDatum[column.getKey()] = column.getRawValue(datum);
+      return normalizedDatum;
+    }, {});
+  }
+
+  return TelemetryTableRow;
 });
